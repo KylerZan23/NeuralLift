@@ -23,7 +23,7 @@ export default function OnboardingStepPage() {
     const base: Array<any> = [
       { name: 'experience_level', q: 'What is your experience level?', options: ['Beginner', 'Intermediate', 'Advanced'] },
       { name: 'days_per_week', q: 'How many days per week can you train?', options: [2, 3, 4, 5, 6] },
-      { name: 'equipment', q: 'What equipment do you have access to?', options: ['Gym', 'Home with barbell', 'Dumbbells only', 'Bands only'] },
+      { name: 'equipment', q: 'What equipment do you have access to?', options: ['Gym', 'Home with barbell', 'Dumbbells only'] },
       { name: 'big3_bench', q: 'Your bench press 1RM (lbs)', type: 'number' },
       { name: 'big3_squat', q: 'Your squat 1RM (lbs)', type: 'number' },
       { name: 'big3_deadlift', q: 'Your deadlift 1RM (lbs)', type: 'number' },

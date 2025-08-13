@@ -1,10 +1,6 @@
 {
   "/page": "app/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/onboarding/[step]/page": "app/onboarding/[step]/page.js",
-  "/api/program/[id]/route": "app/api/program/[id]/route.js",
   "/icon.svg/route": "app/icon.svg/route.js",
-  "/program/[id]/page": "app/program/[id]/page.js",
-  "/api/pr/update/route": "app/api/pr/update/route.js",
-  "/api/generate-program/route": "app/api/generate-program/route.js"
+  "/onboarding/[step]/page": "app/onboarding/[step]/page.js",
+  "/program/[id]/page": "app/program/[id]/page.js"
 }

@@ -144,6 +144,74 @@ function slugifyId(name: string): string {
 function buildAccessory(name: string): Exercise {
   return { id: `${slugifyId(name)}-${Math.random().toString(36).slice(2, 6)}`, name, sets: 2, reps: '10-15', rpe: 8, tempo: '2-0-1', rest_seconds: 120 } as Exercise;
 }
+
+type EquipmentMode = 'gym' | 'dumbbells' | 'barbell';
+
+function getEquipmentMode(input: OnboardingInput): EquipmentMode {
+  const first = (input.equipment_available ?? [])[0]?.toLowerCase() ?? '';
+  if (/dumbbell/.test(first)) return 'dumbbells';
+  if (/barbell/.test(first)) return 'barbell';
+  // default to gym if unspecified
+  return 'gym';
+}
+
+function normalizeNameForEquipment(originalName: string, mode: EquipmentMode): string {
+  // In commercial gym, prefer machine-supported row over barbell row for safety/consistency
+  if (mode === 'gym' && /barbell\s+row/i.test(originalName)) return 'Chest-Supported Row';
+  return originalName;
+}
+
+function substituteExerciseForEquipment(name: string, mode: EquipmentMode): string {
+  const n = name.toLowerCase();
+  if (mode === 'dumbbells') {
+    if (/barbell\s+back\s+squat/.test(n)) return 'Bulgarian Split Squat';
+    if (/front\s+squat/.test(n)) return 'Goblet Squat';
+    if (/conventional\s+deadlift/.test(n)) return 'Dumbbell Romanian Deadlift';
+    if (/romanian\s+deadlift/.test(n)) return 'Dumbbell Romanian Deadlift';
+    if (/bench\s+press/.test(n)) return 'Dumbbell Bench Press';
+    if (/standing\s+overhead\s+press/.test(n)) return 'Seated Dumbbell Shoulder Press';
+    if (/lat\s+pulldown/.test(n)) return 'One-Arm Dumbbell Row';
+    if (/leg\s+press/.test(n)) return 'Bulgarian Split Squat';
+    if (/(lying\s+)?leg\s+curl/.test(n)) return 'Single-Leg Dumbbell Romanian Deadlift';
+    if (/leg\s+extension/.test(n)) return 'Lunges';
+    if (/seated\s+calf\s+raise/.test(n)) return 'Standing Calf Raise';
+    if (/cable\s+triceps\s+pushdown/.test(n)) return 'Overhead Dumbbell Triceps Extension';
+    if (/overhead\s+triceps\s+extension/.test(n)) return 'Overhead Dumbbell Triceps Extension';
+    if (/ez\s+bar\s+curl/.test(n)) return 'Dumbbell Curl';
+    if (/cable\s+flye/.test(n)) return 'Dumbbell Flye';
+    if (/cable\s+lateral\s+raise/.test(n)) return 'Lateral Raise';
+    if (/face\s+pull/.test(n)) return 'Rear Delt Flye';
+    if (/cable\s+crunch/.test(n)) return 'Dumbbell Crunch';
+    // generic cable/machine fallbacks
+    if (/cable|machine|smith/.test(n)) return 'Dumbbell Curl';
+    if (/row\b/.test(n) && !/dumbbell/.test(n)) return 'One-Arm Dumbbell Row';
+    if (/press\b/.test(n) && !/dumbbell/.test(n)) return 'Dumbbell Bench Press';
+  }
+  if (mode === 'barbell') {
+    if (/incline\s+dumbbell\s+press/.test(n)) return 'Incline Barbell Bench Press';
+    if (/dumbbell\s+bench\s+press/.test(n)) return 'Barbell Bench Press';
+    if (/seated\s+dumbbell\s+shoulder\s+press/.test(n)) return 'Standing Overhead Press';
+    if (/lat\s+pulldown/.test(n)) return 'Barbell Row';
+    if (/chest\-supported\s+row/.test(n)) return 'Barbell Row';
+    if (/face\s+pull/.test(n)) return 'Barbell Row';
+    if (/cable\s+flye/.test(n)) return 'Close-Grip Bench Press';
+    if (/cable\s+triceps\s+pushdown/.test(n)) return 'Lying Barbell Triceps Extension';
+    if (/lateral\s+raise/.test(n)) return 'Standing Overhead Press';
+    if (/leg\s+press/.test(n)) return 'Barbell Lunge';
+    if (/lying\s+leg\s+curl/.test(n)) return 'Romanian Deadlift';
+    if (/seated\s+calf\s+raise/.test(n)) return 'Standing Calf Raise';
+    if (/cable\s+crunch/.test(n)) return 'Plank';
+    if (/dumbbell/.test(n)) return name.replace(/dumbbell/gi, 'Barbell');
+    if (/machine|smith/.test(n)) return 'Barbell Row';
+  }
+  return name;
+}
+
+function equipmentCoreExercises(mode: EquipmentMode): readonly [string, string] {
+  if (mode === 'dumbbells') return ['Dumbbell Crunch', 'Plank'] as const;
+  if (mode === 'barbell') return ['Hanging Leg Raise', 'Plank'] as const;
+  return CORE_EXERCISES;
+}
 function accessoryPoolForFocus(focus: string): string[] {
   const upperPool = ['Face Pull', 'Lateral Raise', 'Incline Dumbbell Curl', 'Hammer Curl', 'Overhead Triceps Extension', 'Cable Triceps Pushdown', 'Chest-Supported Row', 'Dumbbell Bench Press'];
   const lowerPool = ['Leg Extension', 'Lying Leg Curl', 'Seated Calf Raise', 'Standing Calf Raise', 'Hip Thrust', 'Bulgarian Split Squat', 'Walking Lunge', 'Leg Press'];
@@ -176,12 +244,12 @@ function enforceCoreForDay(exs: Exercise[], desiredCoreName: string | null): Exe
   coreEx.rest_seconds = 120;
   return [...nonCore, coreEx];
 }
-function dedupeByNamePreserveOrder(exs: Exercise[]): Exercise[] {
+function dedupeByNamePreserveOrder(exs: Exercise[], mode: EquipmentMode): Exercise[] {
   const seen = new Set<string>();
   const out: Exercise[] = [];
   for (const ex of exs) {
-    // Normalize forbidden or aliased names
-    const normalizedName = /barbell\s+row/i.test(ex.name) ? 'Chest-Supported Row' : ex.name;
+    // Normalize aliases by equipment context
+    const normalizedName = normalizeNameForEquipment(ex.name, mode);
     const key = normalizedName.trim().toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -247,6 +315,7 @@ function desiredExerciseCount(sessionMinutes: number | undefined): number {
 }
 function applySessionConstraints(program: Program, input: OnboardingInput): Program {
   try {
+    const mode = getEquipmentMode(input);
     const target = desiredExerciseCount(input.session_length_min);
     const updatedWeeks = (program.weeks ?? []).map(week => ({
       ...week,
@@ -257,14 +326,18 @@ function applySessionConstraints(program: Program, input: OnboardingInput): Prog
           intensity_pct: e.intensity_pct ?? undefined,
           rest_seconds: isMainCompound(e.name) ? 180 : Math.max(120, Math.min(180, e.rest_seconds ?? 120))
         } as Exercise));
-        exs = dedupeByNamePreserveOrder(exs);
+        // Equipment substitutions first
+        exs = exs.map(e => ({ ...e, name: substituteExerciseForEquipment(e.name, mode) }));
+        exs = dedupeByNamePreserveOrder(exs, mode);
         // Core placement: exactly two sessions per week include core (Cable Crunch and Hanging Leg Raise)
         const coreDays = pickCoreDayIndices((week.days ?? []).length);
-        const desiredCoreName = coreDays.includes(di)
-          ? CORE_EXERCISES[coreDays.indexOf(di)]
-          : null;
+        const coreNames = equipmentCoreExercises(mode);
+        const desiredCoreName = coreDays.includes(di) ? coreNames[coreDays.indexOf(di)] : null;
         exs = enforceCoreForDay(exs, desiredCoreName);
         exs = fillAccessoriesToCount(exs, target, day.focus ?? '');
+        // Re-run equipment substitutions for any newly added accessories
+        exs = exs.map(e => ({ ...e, name: substituteExerciseForEquipment(e.name, mode) }));
+        exs = dedupeByNamePreserveOrder(exs, mode);
         exs = trimRespectingCoreAndCompound(exs, target);
         return { ...day, exercises: exs };
       })
@@ -464,15 +537,20 @@ export function generateDeterministicWeek(input: OnboardingInput) {
     week_number: 1,
     days: selected.map((d, i) => {
       // Start from template then apply constraints: dedupe, single core, fill unique accessories, trim if needed
+      const mode = getEquipmentMode(input);
       let exs: Exercise[] = d.exercises.map(e => ({ ...e, intensity_pct: e.intensity_pct ?? undefined, rest_seconds: isMainCompound(e.name) ? 180 : 120 } as Exercise));
-      exs = dedupeByNamePreserveOrder(exs);
-      // Align initial week with the same two-core-day policy
+      // Equipment substitutions before normalization
+      exs = exs.map(e => ({ ...e, name: substituteExerciseForEquipment(e.name, mode) }));
+      exs = dedupeByNamePreserveOrder(exs, mode);
+      // Align initial week with the same two-core-day policy (equipment-aware)
       const coreDays = pickCoreDayIndices(selected.length);
-      const desiredCoreName = coreDays.includes(i)
-        ? CORE_EXERCISES[coreDays.indexOf(i)]
-        : null;
+      const coreNames = equipmentCoreExercises(mode);
+      const desiredCoreName = coreDays.includes(i) ? coreNames[coreDays.indexOf(i)] : null;
       exs = enforceCoreForDay(exs, desiredCoreName);
       exs = fillAccessoriesToCount(exs, desiredCount, d.focus);
+      // Re-run equipment substitutions after filling accessories
+      exs = exs.map(e => ({ ...e, name: substituteExerciseForEquipment(e.name, mode) }));
+      exs = dedupeByNamePreserveOrder(exs, mode);
       exs = trimRespectingCoreAndCompound(exs, desiredCount);
       return { day_number: i + 1, focus: d.focus, exercises: exs, notes: d.notes };
     })

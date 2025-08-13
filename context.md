@@ -49,7 +49,7 @@ Use these exactly (or close) as the 10-step onboarding. Keep answers short — t
 1. Primary goal: \[Hypertrophy, Strength, Recomp, Power]
 2. Experience level: \[Beginner, Intermediate, Advanced]
 3. Available training days/week: \[3, 4, 5, 6]
-4. Equipment: \[Full gym, Barbell + dumbbells, Dumbbells only, Bands only, Bodyweight]
+4. Equipment: \[Gym, Home with barbell, Dumbbells only]
 5. Big 3 PRs (units): bench, squat, deadlift (user can toggle lbs/kg)
 6. Preferred split: \[Push/Pull/Legs, Upper/Lower, Full body, Custom]
 7. Session length (minutes): \[30, 45, 60, 90]
