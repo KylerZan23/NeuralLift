@@ -112,7 +112,11 @@ Constraints (must follow):
   Beginner: 10–14; Intermediate: 14–18; Advanced: 18–26. Stay within ranges.
 - Rep ranges: main lifts 6–12 (emphasis 8–12); accessories 8–20.
 - Deload: 3:1 accumulation-to-deload cycle. Deload week reduces sets (~40%) and intensity.
-- RPE range 5–10. Rest_seconds 30–300. Sets 1–8. Intensity_pct 0.4–0.9 when applicable.
+  - RPE range 5–10. Sets 1–8. Intensity_pct 0.4–0.9 when applicable.
+  - Rest_seconds rules (strict):
+    • Main compound lifts (e.g., Barbell Bench Press, Barbell Back Squat, Standing Overhead Press, Conventional Deadlift) use 180 seconds.
+    • Accessories use 120–180 seconds (prefer 120).
+  - Session length dictates number of exercises per day (strict): 30 min → 4, 45 min → 5, 60 min → 6, 90 min → 7.
 - Tailor exercise selection to equipment, injuries, and movement prefs. Prefer barbell/dumbbell/cable basics; avoid risky variants where injuries conflict.
 - Personalize split based on days/week: 2=Full Body; 3=Upper/Lower/Full; 4=Upper/Lower/Upper/Lower; 5=Push/Pull/Legs/Upper/Lower; 6=Push/Pull/Legs/Upper/Lower/Focus.
 - Provide notes sparingly for technique/progression. Use consistent tempo strings and RPE guidance.
@@ -126,11 +130,138 @@ Output must exactly match keys and types in the program schema:
 - program_id (string), name (string), paid (boolean), weeks [{week_number, days: [{day_number, focus, exercises: [{id, name, sets, reps, rpe, tempo, rest_seconds, intensity_pct?}], notes?}]}], metadata { created_at, source[], volume_profile{} }.
 `;
 
+// Helpers for session constraints and content hygiene
+const CORE_EXERCISES = ['Cable Crunch', 'Hanging Leg Raise'] as const;
+function isCoreExercise(name: string): boolean {
+  return /cable\s+crunch|hanging\s+leg\s+raise/i.test(name);
+}
+function isMainCompound(name: string): boolean {
+  return /barbell\s+bench\s+press|barbell\s+back\s+squat|standing\s+overhead\s+press|conventional\s+deadlift|conventional\s+deadlift|romanian\s+deadlift|front\s+squat/i.test(name);
+}
+function slugifyId(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 16);
+}
+function buildAccessory(name: string): Exercise {
+  return { id: `${slugifyId(name)}-${Math.random().toString(36).slice(2, 6)}`, name, sets: 2, reps: '10-15', rpe: 8, tempo: '2-0-1', rest_seconds: 120 } as Exercise;
+}
+function accessoryPoolForFocus(focus: string): string[] {
+  const upperPool = ['Face Pull', 'Lateral Raise', 'Incline Dumbbell Curl', 'Hammer Curl', 'Overhead Triceps Extension', 'Cable Triceps Pushdown', 'Chest-Supported Row', 'Dumbbell Bench Press'];
+  const lowerPool = ['Leg Extension', 'Lying Leg Curl', 'Seated Calf Raise', 'Standing Calf Raise', 'Hip Thrust', 'Bulgarian Split Squat', 'Walking Lunge', 'Leg Press'];
+  const pullPool = ['Face Pull', 'Rear Delt Flye', 'Chest-Supported Row', 'Hammer Curl'];
+  const pushPool = ['Lateral Raise', 'Cable Flye', 'Overhead Triceps Extension', 'Cable Triceps Pushdown'];
+  const legsPool = lowerPool;
+  const fullPool = Array.from(new Set([...upperPool, ...lowerPool]));
+  const f = (focus || '').toLowerCase();
+  if (f.includes('upper') || f.includes('pull')) return Array.from(new Set([...upperPool, ...pullPool]));
+  if (f.includes('push')) return pushPool;
+  if (f.includes('lower') || f.includes('leg')) return legsPool;
+  return fullPool;
+}
+function enforceSingleCoreAlternate(exs: Exercise[], dayIndexZeroBased: number): Exercise[] {
+  const desiredCore = CORE_EXERCISES[dayIndexZeroBased % CORE_EXERCISES.length];
+  const kept: Exercise[] = [];
+  let coreAdded = false;
+  for (const ex of exs) {
+    if (isCoreExercise(ex.name)) {
+      if (coreAdded) continue; // drop duplicates
+      kept.push({ ...ex, rest_seconds: 120 });
+      coreAdded = true;
+    } else {
+      kept.push(ex);
+    }
+  }
+  if (!coreAdded) kept.push(buildAccessory(desiredCore));
+  return kept;
+}
+function dedupeByNamePreserveOrder(exs: Exercise[]): Exercise[] {
+  const seen = new Set<string>();
+  const out: Exercise[] = [];
+  for (const ex of exs) {
+    const key = ex.name.trim().toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(ex);
+  }
+  return out;
+}
+function fillAccessoriesToCount(exs: Exercise[], desiredCount: number, focus: string): Exercise[] {
+  if (exs.length >= desiredCount) return exs;
+  const names = new Set(exs.map(e => e.name.toLowerCase()));
+  const pool = accessoryPoolForFocus(focus);
+  for (const name of pool) {
+    if (exs.length >= desiredCount) break;
+    if (names.has(name.toLowerCase()) || isCoreExercise(name)) continue;
+    exs.push(buildAccessory(name));
+    names.add(name.toLowerCase());
+  }
+  // If still short, add generic but unique numbered cable crunch variants avoiding duplicates (treated as accessories)
+  while (exs.length < desiredCount) {
+    const filler = buildAccessory('Cable Lateral Raise');
+    if (!exs.some(e => e.name === filler.name)) exs.push(filler);
+    else exs.push(buildAccessory('Dumbbell Curl'));
+  }
+  return exs;
+}
+function trimRespectingCoreAndCompound(exs: Exercise[], desiredCount: number): Exercise[] {
+  if (exs.length <= desiredCount) return exs;
+  const coreIndex = exs.findIndex(e => isCoreExercise(e.name));
+  const mainCompoundIndex = exs.findIndex(e => isMainCompound(e.name));
+  const keepSet = new Set<number>();
+  if (coreIndex >= 0) keepSet.add(coreIndex);
+  if (mainCompoundIndex >= 0) keepSet.add(mainCompoundIndex);
+  const out: Exercise[] = [];
+  for (let i = 0; i < exs.length; i++) {
+    out.push(exs[i]);
+  }
+  // remove from end while respecting keepSet
+  while (out.length > desiredCount) {
+    const idx = out.length - 1;
+    if (keepSet.has(idx)) {
+      // find next removable from end
+      let j = idx - 1;
+      while (j >= 0 && keepSet.has(j)) j--;
+      if (j >= 0) out.splice(j, 1);
+      else break;
+    } else {
+      out.pop();
+    }
+  }
+  return out;
+}
+function desiredExerciseCount(sessionMinutes: number | undefined): number {
+  if (!sessionMinutes) return 6;
+  return sessionMinutes >= 90 ? 7 : sessionMinutes >= 60 ? 6 : sessionMinutes >= 45 ? 5 : 4;
+}
+function applySessionConstraints(program: Program, input: OnboardingInput): Program {
+  try {
+    const target = desiredExerciseCount(input.session_length_min);
+    const updatedWeeks = (program.weeks ?? []).map(week => ({
+      ...week,
+      days: (week.days ?? []).map((day, di) => {
+        // Normalize rests
+        let exs: Exercise[] = (day.exercises ?? []).map(e => ({
+          ...e,
+          intensity_pct: e.intensity_pct ?? undefined,
+          rest_seconds: isMainCompound(e.name) ? 180 : Math.max(120, Math.min(180, e.rest_seconds ?? 120))
+        } as Exercise));
+        exs = dedupeByNamePreserveOrder(exs);
+        exs = enforceSingleCoreAlternate(exs, di);
+        exs = fillAccessoriesToCount(exs, target, day.focus ?? '');
+        exs = trimRespectingCoreAndCompound(exs, target);
+        return { ...day, exercises: exs };
+      })
+    }));
+    return { ...program, weeks: updatedWeeks };
+  } catch {
+    return program;
+  }
+}
+
 export function generateDeterministicWeek(input: OnboardingInput) {
   const exp = input.experience_level;
   const basePct = exp === 'Beginner' ? 0.65 : exp === 'Intermediate' ? 0.72 : 0.75;
-  const restCompound = 120;
-  const restAccessory = input.rest_pref === 'custom' ? 75 : 90;
+  const restCompound = 180; // 3 minutes for main compounds
+  const restAccessory = 120; // default 2 minutes for accessories
 
   const bpPct = Math.min(0.8, basePct);
   const sqPct = Math.min(0.78, basePct);
@@ -308,9 +439,20 @@ export function generateDeterministicWeek(input: OnboardingInput) {
   else if (daysPerWeek === 6) selected = sixDay as any;
   else selected = threeDay as any;
 
+  // Enforce exercise counts per session length: 30→4, 45→5, 60→6, 90→7
+  const desiredCount = desiredExerciseCount(input.session_length_min);
+
   return {
     week_number: 1,
-    days: selected.map((d, i) => ({ day_number: i + 1, focus: d.focus, exercises: d.exercises, notes: d.notes }))
+    days: selected.map((d, i) => {
+      // Start from template then apply constraints: dedupe, single core, fill unique accessories, trim if needed
+      let exs: Exercise[] = d.exercises.map(e => ({ ...e, intensity_pct: e.intensity_pct ?? undefined, rest_seconds: isMainCompound(e.name) ? 180 : 120 } as Exercise));
+      exs = dedupeByNamePreserveOrder(exs);
+      exs = enforceSingleCoreAlternate(exs, i);
+      exs = fillAccessoriesToCount(exs, desiredCount, d.focus);
+      exs = trimRespectingCoreAndCompound(exs, desiredCount);
+      return { day_number: i + 1, focus: d.focus, exercises: exs, notes: d.notes };
+    })
   };
 }
 
@@ -326,16 +468,49 @@ export function generateFullProgram(input: OnboardingInput) {
 
     const adjustedDays = baseWeek.days.map(day => ({
       ...day,
-      exercises: day.exercises.map(ex => {
+    exercises: day.exercises.map(ex => {
         const sets = Math.max(1, Math.round(ex.sets * volumeMultiplier));
         const intensity_pct = ex.intensity_pct != null ? Math.max(0.5, Math.min(0.9, (ex.intensity_pct + intensityBump))) : undefined;
-        return { ...ex, sets, intensity_pct };
+      // Ensure rest rules persist across weeks
+      const isCompound = /barbell\s+bench\s+press|barbell\s+back\s+squat|standing\s+overhead\s+press|conventional\s+deadlift/i.test(ex.name);
+      const rest_seconds = isCompound ? 180 : Math.max(120, Math.min(180, ex.rest_seconds ?? 120));
+      return { ...ex, sets, intensity_pct, rest_seconds };
       })
     }));
 
     weeks.push({ week_number: w, days: adjustedDays });
   }
   return weeks;
+}
+
+export function enforceDaysSplit(program: Program, input: OnboardingInput): Program {
+  try {
+    const desired = generateDeterministicWeek(input);
+    const desiredCount = desired.days.length;
+    const alignedWeeks = (program.weeks ?? []).map(week => {
+      const currentDays = week.days ?? [];
+      if (currentDays.length === desiredCount) {
+        // Normalize day_number sequence only; preserve content
+        return { ...week, days: currentDays.map((d, i) => ({ ...d, day_number: i + 1 })) };
+      }
+      if (currentDays.length < desiredCount) {
+        // Pad with empty days using desired day focuses, but do not replace existing content
+        const pads = desired.days.slice(currentDays.length, desiredCount).map((d, i) => ({
+          day_number: currentDays.length + i + 1,
+          focus: d.focus,
+          exercises: d.exercises,
+          notes: d.notes
+        }));
+        return { ...week, days: [...currentDays.map((d, i) => ({ ...d, day_number: i + 1 })), ...pads] };
+      }
+      // Truncate extra days but keep original content for the retained days
+      const trimmed = currentDays.slice(0, desiredCount).map((d, i) => ({ ...d, day_number: i + 1 }));
+      return { ...week, days: trimmed };
+    });
+    return { ...program, weeks: alignedWeeks };
+  } catch {
+    return program;
+  }
 }
 
 export async function refineWithGPT(baseProgram: any, citations: string[]) {
@@ -377,7 +552,7 @@ export async function generateProgramWithLLM(input: OnboardingInput, opts?: { pr
       name: '12-week Hypertrophy Program',
       paid: false,
       weeks,
-      metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {} }
+      metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {}, big3_prs: input.big3_PRs ?? {}, experience_level: input.experience_level }
     };
     return fallback;
   }
@@ -402,14 +577,28 @@ export async function generateProgramWithLLM(input: OnboardingInput, opts?: { pr
     const jsonEnd = text.lastIndexOf('}');
     if (jsonStart < 0 || jsonEnd <= jsonStart) throw new Error('No JSON in response');
     const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
-    const prepared = ensureMetadata(coerceProgramId(parsed, programId));
+    let prepared = ensureMetadata(coerceProgramId(parsed, programId));
+    (prepared as any).metadata = {
+      ...(prepared as any).metadata,
+      big3_prs: input.big3_PRs ?? {},
+      experience_level: input.experience_level
+    };
+    prepared = enforceDaysSplit(prepared as Program, input);
+    prepared = applySessionConstraints(prepared as Program, input);
     try {
       return toProgramOrThrow(prepared);
     } catch {
       const repaired = await repairWithModel(JSON.stringify(prepared), validateProgram.errors ?? []);
       if (repaired) {
         const reparsed = JSON.parse(repaired);
-        const final = ensureMetadata(coerceProgramId(reparsed, programId));
+        let final = ensureMetadata(coerceProgramId(reparsed, programId));
+        final = enforceDaysSplit(final as Program, input);
+        final = applySessionConstraints(final as Program, input);
+        (final as any).metadata = {
+          ...(final as any).metadata,
+          big3_prs: input.big3_PRs ?? {},
+          experience_level: input.experience_level
+        };
         return toProgramOrThrow(final);
       }
       throw new Error('Repair failed');
@@ -421,7 +610,7 @@ export async function generateProgramWithLLM(input: OnboardingInput, opts?: { pr
       name: '12-week Hypertrophy Program',
       paid: false,
       weeks,
-      metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {} }
+      metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {}, big3_prs: input.big3_PRs ?? {}, experience_level: input.experience_level }
     };
     return fallback;
   }

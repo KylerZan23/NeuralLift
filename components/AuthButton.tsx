@@ -23,7 +23,7 @@ export default function AuthButton() {
   };
 
   return email ? (
-    <Button variant="ghost" onClick={signOut}>Sign out ({email})</Button>
+    <Button variant="ghost" className="text-white" onClick={signOut}>Sign out ({email})</Button>
   ) : (
     <Button variant="secondary" onClick={signInWithGoogle}>Sign in with Google</Button>
   );

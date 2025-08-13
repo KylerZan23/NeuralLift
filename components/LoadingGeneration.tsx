@@ -14,16 +14,16 @@ export default function LoadingGeneration({ answers }: { answers: Record<string,
   ];
 
   return (
-    <div className="rounded-3xl bg-white/80 p-6 backdrop-blur-xl shadow-xl">
-      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+    <div className="rounded-xl bg-card/70 p-6 backdrop-blur-xl shadow-xl border border-border/50">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
         <motion.div
           initial={{ width: '0%' }}
           animate={{ width: '90%' }}
           transition={{ duration: 1.6, ease: 'easeInOut', repeat: Infinity, repeatType: 'mirror' }}
-          className="h-full bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-cyan-400"
+          className="h-full bg-gradient-to-r from-primary via-accent to-primary"
         />
       </div>
-      <ul className="mt-4 space-y-1 text-gray-800">
+      <ul className="mt-4 space-y-1 text-foreground">
         {messages.map((m, i) => (
           <li key={i} className="text-sm">{m}</li>
         ))}

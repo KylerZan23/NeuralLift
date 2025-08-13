@@ -17,7 +17,7 @@ Key vars:
 - SUPABASE_SERVICE_ROLE_KEY (server-only)
 - STRIPE_SECRET, NEXT_PUBLIC_STRIPE_PUBLISHABLE, STRIPE_WEBHOOK_SECRET
 - STRIPE_PRICE_PROGRAM_UNLOCK (Stripe Price ID for program unlock)
-- OPENAI_API_KEY (recommended for LLM generation; if omitted we fall back to deterministic rules)
+- OPENAI_API_KEY (required for personalized LLM generation; if omitted we fall back to deterministic rules)
 
 ## Scripts
 - yarn dev
@@ -40,6 +40,11 @@ Key vars:
 ## Onboarding → Program
 - Answers persist in localStorage per step.
 - Final step shows a loading screen and posts to `/api/generate-program`; on success it redirects to `/program/{id}`.
+
+### Accessory Weight Prescription
+- Program page displays suggested working weights for mapped accessories based on user's Big-3 PRs.
+ - Formula: Accessory 1RM = Big-3 1RM × ratio (experience-adjusted), Working = Accessory 1RM × 0.82, rounded to nearest 5 lb. Beginners use midpoint of ratio; Intermediate/Advanced use upper bound.
+- Logic lives in `lib/weight-prescription.ts`. UI integration in `components/ProgramWeekView.tsx`.
 
 ## Gating
 - Week 1 free; weeks 2–12 gated until Stripe payment succeeds.

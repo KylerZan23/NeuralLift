@@ -29,13 +29,13 @@ export default function TopNav({ programId }: Props) {
   const programHref = latestProgramId ? `/program/${latestProgramId}` : '/dashboard';
 
   return (
-    <nav className="mb-6 rounded-2xl bg-white/15 text-white shadow-lg ring-1 ring-white/20">
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="font-extrabold tracking-tight">NeuralLift</Link>
-        <div className="flex items-center gap-3">
-          <Link href="/" className="rounded-xl px-3 py-2 hover:bg-white/20">Home</Link>
-          <Link href="/dashboard" className="rounded-xl px-3 py-2 hover:bg-white/20">Dashboard</Link>
-          <Link href={programHref} className="rounded-xl px-3 py-2 hover:bg-white/20">Program</Link>
+    <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 text-foreground">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
+        <Link href="/" className="font-display font-bold text-2xl">NeuralLift</Link>
+        <div className="hidden md:flex items-center gap-6">
+          <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">Home</Link>
+          <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link>
+          <Link href={programHref} className="text-muted-foreground hover:text-foreground transition-colors">Program</Link>
         </div>
       </div>
     </nav>

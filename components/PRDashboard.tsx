@@ -21,11 +21,22 @@ export default function PRDashboard() {
   useEffect(() => {
     const supabase = getSupabaseClient();
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
-    // Optionally load current PRs
+    // Load current PRs, or pending PRs if user is not signed in
     (async () => {
       try {
         const uid = (await supabase.auth.getUser()).data.user?.id;
-        if (!uid) return;
+        if (!uid) {
+          try {
+            const raw = localStorage.getItem('pending_prs');
+            if (raw) {
+              const pending = JSON.parse(raw);
+              setBench(pending.bench ?? '');
+              setSquat(pending.squat ?? '');
+              setDeadlift(pending.deadlift ?? '');
+            }
+          } catch {}
+          return;
+        }
         // Load latest program id for user to support regenerate flow
         const pid = await fetchLatestProgramIdForUser(supabase, uid);
         if (pid) setActiveProgramId(pid);
@@ -65,6 +76,7 @@ export default function PRDashboard() {
       if (improved('bench') || improved('squat') || improved('deadlift')) {
         setShowUpsell(true);
       }
+      try { localStorage.removeItem('pending_prs'); } catch {}
     } catch {
       // no-op UI for now
     } finally {

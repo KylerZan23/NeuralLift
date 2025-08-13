@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import ProgramWeekView, { Day } from '@/components/ProgramWeekView';
+import { getSupabaseClient } from '@/lib/supabase';
+import type { Big3PRs } from '@/lib/weight-prescription';
 import GatingModal from '@/components/GatingModal';
 import TopNav from '@/components/TopNav';
 import { Button } from '@/components/ui/button';
@@ -23,15 +25,44 @@ export default function ProgramPage() {
   const search = useSearchParams();
   const [showToast, setShowToast] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [prs, setPrs] = useState<Big3PRs | null>(null);
+  const [experience, setExperience] = useState<'Beginner' | 'Intermediate' | 'Advanced'>('Intermediate');
 
   useEffect(() => {
     const id = Array.isArray(params.id) ? params.id[0] : params.id;
     fetch(`/api/program/${id}`, { method: 'GET' })
       .then(r => r.json())
-      .then((p) => setProgram(p))
+      .then((p) => {
+        setProgram(p);
+        const meta = (p?.metadata ?? {}) as any;
+        if (meta?.big3_prs) setPrs(meta.big3_prs);
+        if (meta?.experience_level) setExperience(meta.experience_level);
+      })
       .catch(() => setProgram(null))
       .finally(() => setLoading(false));
   }, [params.id, search?.get('checkout')]);
+
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const uid = data.user?.id;
+        if (!uid) return;
+        const { data: row } = await supabase.from('prs').select('*').eq('user_id', uid).single();
+        if (row) setPrs({ bench: row.bench ?? null, squat: row.squat ?? null, deadlift: row.deadlift ?? null });
+      } catch {}
+    })();
+  }, []);
+  
+  // Fallback: if no PRs in supabase, check pending_prs in localStorage
+  useEffect(() => {
+    if (prs && (prs.bench || prs.squat || prs.deadlift)) return;
+    try {
+      const raw = localStorage.getItem('pending_prs');
+      if (raw) setPrs(JSON.parse(raw));
+    } catch {}
+  }, [prs]);
 
   // Post-payment toast & cleanup of query param
   useEffect(() => {
@@ -60,41 +91,59 @@ export default function ProgramPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 p-6 text-white">
+    <main className="min-h-screen bg-gradient-to-br from-[oklch(0.985_0.015_240)] via-card to-[oklch(0.985_0.01_240)] text-foreground">
       <TopNav programId={program.program_id} />
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex items-center justify-between">
-          <h1 className="text-3xl font-extrabold">{program.name}</h1>
-          <div className="flex gap-2">
-            <Button variant="primary" onClick={() => setShowGating(true)}>Unlock full 12 weeks — $9.99</Button>
-            <Button variant="secondary" onClick={() => setShowGating(true)} title="Regenerate a program updated to your current PRs">Generate a new program</Button>
-          </div>
-        </header>
+      <section className="pt-20 pb-10 px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl space-y-8">
+          <header className="flex items-center justify-between">
+            <h1 className="font-display text-3xl md:text-4xl">{program.name}</h1>
+            <div className="flex gap-2">
+              <Button onClick={() => setShowGating(true)}>Unlock full 12 weeks — $9.99</Button>
+              <Button variant="outline" onClick={() => setShowGating(true)} title="Regenerate a program updated to your current PRs">Generate a new program</Button>
+            </div>
+          </header>
 
-        <Tabs value={String(selectedWeek)} onValueChange={(val) => handleWeekSelect(Number(val))}>
-          <TabsList className="flex flex-wrap gap-2">
-            {Array.from({ length: 12 }, (_, i) => i + 1).map(w => (
-              <TabsTrigger key={w} value={String(w)} className={`rounded-full px-3 py-1 text-sm ${selectedWeek === w ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30'}`}>
-                Week {w}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {Array.from({ length: 12 }, (_, i) => i + 1).map(w => (
-            <TabsContent key={w} value={String(w)}>
-              <ProgramWeekView
-                weekNumber={w}
-                days={program.weeks.find(week => week.week_number === w)?.days ?? []}
-              />
-            </TabsContent>
-          ))}
-        </Tabs>
-      </div>
+          <div className="relative">
+            <div className="relative z-10">
+              <div className="p-6 md:p-8 bg-card/50 backdrop-blur-sm border-border/50 shadow-2xl rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-display text-xl">Weekly Overview</h2>
+                </div>
+                <Tabs value={String(selectedWeek)} onValueChange={(val) => handleWeekSelect(Number(val))}>
+                  <TabsList className="flex flex-wrap gap-2">
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(w => (
+                      <TabsTrigger
+                        key={w}
+                        value={String(w)}
+                        className={`rounded-md px-3 py-1 text-sm ${selectedWeek === w ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
+                      >
+                        Week {w}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(w => (
+                    <TabsContent key={w} value={String(w)}>
+                      <ProgramWeekView
+                        weekNumber={w}
+                        days={program.weeks.find(week => week.week_number === w)?.days ?? []}
+                        prs={prs ?? undefined}
+                        experience={experience}
+                      />
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </div>
+            </div>
+            <div className="absolute -top-4 -right-4 w-72 h-72 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full blur-3xl -z-10" />
+          </div>
+        </div>
+      </section>
 
       <GatingModal open={showGating} onClose={() => setShowGating(false)} programId={program.program_id} reason={selectedWeek > 1 ? 'unlock_full_program' : 'regenerate_program'} />
 
       {showToast ? (
         <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center">
-          <div className="rounded-xl bg-white text-gray-900 px-4 py-3 shadow-xl">
+          <div className="rounded-xl bg-card text-foreground px-4 py-3 shadow-xl border border-border/50">
             Purchase successful — all weeks unlocked.
           </div>
         </div>
