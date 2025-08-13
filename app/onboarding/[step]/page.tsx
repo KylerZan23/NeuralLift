@@ -77,7 +77,7 @@ export default function OnboardingStepPage() {
       const { data } = await supabase.auth.getUser();
       const payload = {
         programId: crypto.randomUUID(),
-        useGPT: false,
+        useGPT: true,
         userId: data.user?.id,
         input: {
           experience_level: (state['experience_level'] as any) ?? 'Intermediate',

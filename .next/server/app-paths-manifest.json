@@ -1,6 +1,6 @@
 {
-  "/page": "app/page.js",
-  "/icon.svg/route": "app/icon.svg/route.js",
+  "/program/[id]/page": "app/program/[id]/page.js",
   "/onboarding/[step]/page": "app/onboarding/[step]/page.js",
-  "/dashboard/page": "app/dashboard/page.js"
+  "/page": "app/page.js",
+  "/api/program/[id]/route": "app/api/program/[id]/route.js"
 }

@@ -5,7 +5,7 @@ Science-based lifting tailored to you. Generate and unlock a 12-week hypertrophy
 ## Stack
 - Next.js (App Router), TypeScript, Tailwind CSS
 - Supabase (Auth + Postgres), Stripe (Checkout + Webhooks)
-- OpenAI (optional GPT refinement), Framer Motion
+- OpenAI (LLM-first generation with deterministic fallback), Framer Motion
 - Jest + Testing Library, Storybook
 
 ## Env
@@ -17,7 +17,7 @@ Key vars:
 - SUPABASE_SERVICE_ROLE_KEY (server-only)
 - STRIPE_SECRET, NEXT_PUBLIC_STRIPE_PUBLISHABLE, STRIPE_WEBHOOK_SECRET
 - STRIPE_PRICE_PROGRAM_UNLOCK (Stripe Price ID for program unlock)
-- OPENAI_API_KEY (optional)
+- OPENAI_API_KEY (recommended for LLM generation; if omitted we fall back to deterministic rules)
 
 ## Scripts
 - yarn dev
@@ -27,7 +27,7 @@ Key vars:
 - yarn storybook
 
 ## API
-- POST `/api/generate-program` — body: `{ programId?, useGPT?, userId?, input }` -> creates 12-week program and upserts to DB.
+- POST `/api/generate-program` — body: `{ programId?, useGPT? (default true), userId?, input }` -> creates 12-week program and upserts to DB. When `OPENAI_API_KEY` is present and `useGPT=true`, uses LLM-first generation; otherwise deterministic fallback.
 - GET `/api/program/:id` — fetch program by id.
 - POST `/api/pr/update` — upsert PRs for the authenticated user `{ bench?, squat?, deadlift? }`.
 - POST `/api/stripe-session` — returns Checkout URL. Supports `reason: 'unlock_full_program' | 'regenerate_program'` and `userId` metadata.
@@ -59,7 +59,7 @@ Run migrations in Supabase SQL editor (manual):
 ## Dev notes
 - Server routes use service role client (`lib/supabase-server.ts`) to bypass RLS for writes.
 - Write endpoints derive user from server auth context; do not trust client-provided `user_id`.
-- Optional GPT refinement: set `OPENAI_API_KEY` to refine program JSON.
+- LLM-first generation: set `OPENAI_API_KEY` to enable; server validates model output against `types/program.schema.json` and attempts a single repair; falls back to deterministic generator on failure.
 - Program schema is validated with AJV against `types/program.schema.json` before saving.
 
 ## Testing

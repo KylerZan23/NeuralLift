@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { OnboardingInput, generateFullProgram, refineWithGPT } from '@/lib/program-generator';
+import { OnboardingInput, generateFullProgram, refineWithGPT, generateProgramWithLLM } from '@/lib/program-generator';
 import Ajv from 'ajv';
 import programSchema from '@/types/program.schema.json';
 import { getServiceSupabaseClient } from '@/lib/supabase-server';
@@ -42,15 +42,20 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const input = OnboardingInput.parse(body.input);
   const gpt = Boolean(body.useGPT);
-  const base: Program = {
-    program_id: body.programId ?? crypto.randomUUID(),
-    name: '12-week Hypertrophy Program',
-    paid: false,
-    weeks: generateFullProgram(input),
-    metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {} }
-  };
-
-  const program: Program = gpt ? await refineWithGPT(base, body.citations ?? []) : base;
+  const programId = body.programId ?? crypto.randomUUID();
+  let program: Program;
+  if (gpt) {
+    program = await generateProgramWithLLM(input, { programId, citations: body.citations ?? [] });
+  } else {
+    const base: Program = {
+      program_id: programId,
+      name: '12-week Hypertrophy Program',
+      paid: false,
+      weeks: generateFullProgram(input),
+      metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {} }
+    };
+    program = base;
+  }
   // Validate program against JSON schema before saving
   const valid = validateProgram(program);
   if (!valid) {
