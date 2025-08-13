@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 import { stripe } from '@/lib/stripe';
 import { getServiceSupabaseClient } from '@/lib/supabase-server';
+import type Stripe from 'stripe';
 
 export async function POST(req: NextRequest) {
   const payload = await req.text();
@@ -17,7 +18,10 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as any;
+    const session = event.data.object as Stripe.Checkout.Session;
+    if (session.mode !== 'payment' || session.payment_status !== 'paid') {
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
     const programId = session.metadata?.programId as string | undefined;
     const reason = session.metadata?.reason as 'unlock_full_program' | 'regenerate_program' | undefined;
     const userId = session.metadata?.userId as string | undefined;
@@ -34,11 +38,13 @@ export async function POST(req: NextRequest) {
             user_id: userId ?? null,
             program_id: programId,
             reason: reason ?? 'unlock_full_program',
-            amount_cents: session.amount_total ?? 999,
+            amount_cents: session.amount_total ?? null,
             stripe_session_id: session.id
           });
         }
-      } catch {}
+      } catch (e: any) {
+        return NextResponse.json({ error: 'Processing error', details: e?.message ?? String(e) }, { status: 500 });
+      }
     }
   }
 

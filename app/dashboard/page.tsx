@@ -6,6 +6,7 @@ import { getSupabaseClient } from '@/lib/supabase';
 import { fetchLatestProgramIdForUser } from '@/lib/programs';
 import TopNav from '@/components/TopNav';
 import PRProgressChart from '@/components/PRProgressChart';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardPage() {
   const onGenerateNew = useCallback(async () => {
@@ -26,7 +27,7 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-extrabold">Dashboard</h1>
-          <button onClick={onGenerateNew} className="rounded-xl bg-white text-gray-900 px-4 py-2 font-semibold">Generate a new program</button>
+          <Button variant="secondary" onClick={onGenerateNew}>Generate a new program</Button>
         </div>
         <PRProgressChart />
         <PRDashboard />

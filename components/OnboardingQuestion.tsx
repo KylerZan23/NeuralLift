@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 type Option = { label: string; value: string | number };
 type Props = {
@@ -56,22 +58,20 @@ export default function OnboardingQuestion({
         )}
 
         {type === 'text' && (
-          <input
+          <Input
             id={inputId}
             type="text"
             aria-label={question}
-            className="w-full rounded-xl border border-gray-300 bg-white p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             value={String(value ?? '')}
             onChange={(e) => onChange(e.target.value)}
           />
         )}
 
         {type === 'number' && (
-          <input
+          <Input
             id={inputId}
             type="number"
             aria-label={question}
-            className="w-full rounded-xl border border-gray-300 bg-white p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             value={value ?? ''}
             onChange={(e) => onChange(Number(e.target.value))}
           />
@@ -79,21 +79,10 @@ export default function OnboardingQuestion({
       </div>
 
       <div className="mt-8 flex justify-between">
-        <button
-          onClick={onPrev}
-          className="rounded-xl px-4 py-2 border border-gray-300 text-gray-800 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-indigo-500"
-        >
-          Back
-        </button>
-        <button
-          onClick={onNext}
-          aria-disabled={!isValid || submitting}
-          disabled={!isValid || submitting}
-          aria-busy={submitting}
-          className={`rounded-xl px-4 py-2 font-semibold text-white focus-visible:ring-2 focus-visible:ring-indigo-500 ${isValid && !submitting ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-400 cursor-not-allowed'}`}
-        >
+        <Button variant="secondary" onClick={onPrev}>Back</Button>
+        <Button onClick={onNext} aria-disabled={!isValid || submitting} disabled={!isValid || submitting} aria-busy={submitting}>
           {submitting ? 'Submitting…' : (nextLabel ?? 'Next')}
-        </button>
+        </Button>
       </div>
     </div>
   );

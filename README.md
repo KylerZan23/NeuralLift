@@ -16,6 +16,7 @@ Key vars:
 - NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
 - SUPABASE_SERVICE_ROLE_KEY (server-only)
 - STRIPE_SECRET, NEXT_PUBLIC_STRIPE_PUBLISHABLE, STRIPE_WEBHOOK_SECRET
+- STRIPE_PRICE_PROGRAM_UNLOCK (Stripe Price ID for program unlock)
 - OPENAI_API_KEY (optional)
 
 ## Scripts
@@ -28,8 +29,9 @@ Key vars:
 ## API
 - POST `/api/generate-program` — body: `{ programId?, useGPT?, userId?, input }` -> creates 12-week program and upserts to DB.
 - GET `/api/program/:id` — fetch program by id.
-- POST `/api/pr/update` — upsert PRs `{ user_id, bench, squat, deadlift }`.
+- POST `/api/pr/update` — upsert PRs for the authenticated user `{ bench?, squat?, deadlift? }`.
 - POST `/api/stripe-session` — returns Checkout URL. Supports `reason: 'unlock_full_program' | 'regenerate_program'` and `userId` metadata.
+- Body is validated; `programId` required. Session line items use Stripe Price ID from env.
 - POST `/api/stripe-webhook` — marks `programs.paid = true` via service role.
 
 ## Auth
@@ -56,6 +58,7 @@ Run migrations in Supabase SQL editor (manual):
 
 ## Dev notes
 - Server routes use service role client (`lib/supabase-server.ts`) to bypass RLS for writes.
+- Write endpoints derive user from server auth context; do not trust client-provided `user_id`.
 - Optional GPT refinement: set `OPENAI_API_KEY` to refine program JSON.
 - Program schema is validated with AJV against `types/program.schema.json` before saving.
 

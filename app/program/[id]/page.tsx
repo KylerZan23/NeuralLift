@@ -4,6 +4,8 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import ProgramWeekView, { Day } from '@/components/ProgramWeekView';
 import GatingModal from '@/components/GatingModal';
 import TopNav from '@/components/TopNav';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type Program = {
   program_id: string;
@@ -64,38 +66,28 @@ export default function ProgramPage() {
         <header className="flex items-center justify-between">
           <h1 className="text-3xl font-extrabold">{program.name}</h1>
           <div className="flex gap-2">
-            <button
-              onClick={() => setShowGating(true)}
-              className="rounded-xl bg-white text-gray-900 px-4 py-2 font-semibold"
-            >
-              Unlock full 12 weeks — $9.99
-            </button>
-            <button
-              onClick={() => setShowGating(true)}
-              className="rounded-xl border border-white/40 px-4 py-2"
-              title="Regenerate a program updated to your current PRs"
-            >
-              Generate a new program
-            </button>
+            <Button variant="primary" onClick={() => setShowGating(true)}>Unlock full 12 weeks — $9.99</Button>
+            <Button variant="secondary" onClick={() => setShowGating(true)} title="Regenerate a program updated to your current PRs">Generate a new program</Button>
           </div>
         </header>
 
-        <div className="flex flex-wrap gap-2">
+        <Tabs value={String(selectedWeek)} onValueChange={(val) => handleWeekSelect(Number(val))}>
+          <TabsList className="flex flex-wrap gap-2">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map(w => (
+              <TabsTrigger key={w} value={String(w)} className={`rounded-full px-3 py-1 text-sm ${selectedWeek === w ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30'}`}>
+                Week {w}
+              </TabsTrigger>
+            ))}
+          </TabsList>
           {Array.from({ length: 12 }, (_, i) => i + 1).map(w => (
-            <button
-              key={w}
-              onClick={() => handleWeekSelect(w)}
-              className={`rounded-full px-3 py-1 text-sm ${selectedWeek === w ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30'}`}
-            >
-              Week {w}
-            </button>
+            <TabsContent key={w} value={String(w)}>
+              <ProgramWeekView
+                weekNumber={w}
+                days={program.weeks.find(week => week.week_number === w)?.days ?? []}
+              />
+            </TabsContent>
           ))}
-        </div>
-
-        <ProgramWeekView
-          weekNumber={selectedWeek}
-          days={program.weeks.find(w => w.week_number === selectedWeek)?.days ?? []}
-        />
+        </Tabs>
       </div>
 
       <GatingModal open={showGating} onClose={() => setShowGating(false)} programId={program.program_id} reason={selectedWeek > 1 ? 'unlock_full_program' : 'regenerate_program'} />

@@ -5,6 +5,7 @@ import AuthButton from '@/components/AuthButton';
 import { ensureAuthOrStartOAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
+import { Button } from '@/components/ui/button';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -38,16 +39,10 @@ export default function LandingPage() {
             An AI that builds you a 12‑week hypertrophy plan rooted in the latest research — tailored to your body, goals, and equipment.
           </p>
           <div className="mt-10 flex items-center gap-4">
-            <button
-              onClick={onPrimaryClick}
-              className="rounded-2xl bg-white text-gray-900 px-6 py-3 font-semibold shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-[1.02] transition-transform"
-            >
+            <Button variant="secondary" onClick={onPrimaryClick} className="!bg-white !text-gray-900 !shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-[1.02] transition-transform">
               Create your own science-based training program now
-            </button>
-            <a
-              href="#demo"
-              className="rounded-2xl border border-white/30 px-6 py-3 font-semibold backdrop-blur-md hover:bg-white/10"
-            >
+            </Button>
+            <a href="#demo" className="rounded-2xl border border-white/30 px-6 py-3 font-semibold backdrop-blur-md hover:bg-white/10">
               View a demo week
             </a>
           </div>

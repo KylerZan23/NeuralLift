@@ -22,7 +22,7 @@ describe('OnboardingQuestion', () => {
       />
     );
     const next = screen.getByRole('button', { name: /start your journey/i });
-    expect(next).toHaveClass('cursor-not-allowed');
+    expect(next).toHaveClass('disabled:cursor-not-allowed');
   });
 });
 

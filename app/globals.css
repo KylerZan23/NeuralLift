@@ -6,6 +6,15 @@
   --color-brand-from: #4f46e5;
   --color-brand-via: #7c3aed;
   --color-brand-to: #d946ef;
+  --color-primary-500: #5B8CFF;
+  --color-primary-600: #386BFF;
+  --color-outline: rgba(13, 24, 46, 0.06);
+  --color-surface: rgba(255,255,255,0.9);
+  --color-text: #0D172E;
+  --color-muted: #657085;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
 }
 
 html, body, #__next { height: 100%; }

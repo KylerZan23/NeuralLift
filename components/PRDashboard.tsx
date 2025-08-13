@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase';
 import { fetchLatestProgramIdForUser } from '@/lib/programs';
 import Sparkline from './Sparkline';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export default function PRDashboard() {
   const [bench, setBench] = useState<number | ''>('');
@@ -43,7 +46,7 @@ export default function PRDashboard() {
       const res = await fetch('/api/pr/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, bench: Number(bench || 0), squat: Number(squat || 0), deadlift: Number(deadlift || 0) })
+        body: JSON.stringify({ bench: Number(bench || 0), squat: Number(squat || 0), deadlift: Number(deadlift || 0) })
       });
       if (!res.ok) throw new Error('Failed to save');
       setSeries(prev => ({
@@ -74,26 +77,26 @@ export default function PRDashboard() {
       <div className="rounded-3xl bg-white p-6 shadow-xl">
       <h3 className="text-xl font-semibold text-gray-900">Your PRs</h3>
       <div className="mt-4 grid grid-cols-3 gap-4">
-        <label className="flex flex-col text-sm text-gray-700">
-          Bench (lb)
-          <input className="mt-1 rounded-xl border p-2" type="number" value={bench} onChange={e => setBench(Number(e.target.value))} />
+        <div className="flex flex-col text-sm text-gray-700">
+          <Label htmlFor="bench">Bench (lb)</Label>
+          <Input id="bench" className="mt-1" type="number" value={bench} onChange={e => setBench(Number(e.target.value))} />
           <div className="mt-2"><Sparkline values={series.bench} userId={userId} metric="bench" /></div>
-        </label>
-        <label className="flex flex-col text-sm text-gray-700">
-          Squat (lb)
-          <input className="mt-1 rounded-xl border p-2" type="number" value={squat} onChange={e => setSquat(Number(e.target.value))} />
+        </div>
+        <div className="flex flex-col text-sm text-gray-700">
+          <Label htmlFor="squat">Squat (lb)</Label>
+          <Input id="squat" className="mt-1" type="number" value={squat} onChange={e => setSquat(Number(e.target.value))} />
           <div className="mt-2"><Sparkline values={series.squat} stroke="#10B981" userId={userId} metric="squat" /></div>
-        </label>
-        <label className="flex flex-col text-sm text-gray-700">
-          Deadlift (lb)
-          <input className="mt-1 rounded-xl border p-2" type="number" value={deadlift} onChange={e => setDeadlift(Number(e.target.value))} />
+        </div>
+        <div className="flex flex-col text-sm text-gray-700">
+          <Label htmlFor="deadlift">Deadlift (lb)</Label>
+          <Input id="deadlift" className="mt-1" type="number" value={deadlift} onChange={e => setDeadlift(Number(e.target.value))} />
           <div className="mt-2"><Sparkline values={series.deadlift} stroke="#F59E0B" userId={userId} metric="deadlift" /></div>
-        </label>
+        </div>
       </div>
       <div className="mt-4 flex justify-end">
-        <button onClick={onSave} disabled={!userId || saving} className="rounded-xl bg-indigo-600 text-white px-4 py-2 disabled:opacity-60">
+        <Button onClick={onSave} disabled={!userId || saving}>
           {saving ? 'Saving…' : 'Save'}
-        </button>
+        </Button>
       </div>
       </div>
       {showUpsell ? (
@@ -112,7 +115,7 @@ export default function PRDashboard() {
                   const res = await fetch('/api/stripe-session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ programId: activeProgramId, reason: 'regenerate_program', userId })
+                    body: JSON.stringify({ programId: activeProgramId, reason: 'regenerate_program' })
                   });
                   const data = await res.json();
                   if (data.url) window.location.href = data.url;

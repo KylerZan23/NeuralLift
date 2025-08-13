@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase';
 import { ensureAuthOrStartOAuth } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
 
 export default function AuthButton() {
   const [email, setEmail] = useState<string | null>(null);
@@ -22,9 +23,9 @@ export default function AuthButton() {
   };
 
   return email ? (
-    <button onClick={signOut} className="rounded-xl bg-white/10 px-4 py-2">Sign out ({email})</button>
+    <Button variant="ghost" onClick={signOut}>Sign out ({email})</Button>
   ) : (
-    <button onClick={signInWithGoogle} className="rounded-xl bg-white text-gray-900 px-4 py-2 font-semibold">Sign in with Google</button>
+    <Button variant="secondary" onClick={signInWithGoogle}>Sign in with Google</Button>
   );
 }
 

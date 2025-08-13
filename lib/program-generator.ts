@@ -153,16 +153,17 @@ export async function refineWithGPT(baseProgram: any, citations: string[]) {
     const { OpenAI } = await import('openai');
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const prompt = `You are a strength coach. Refine the provided 12-week hypertrophy program JSON by adding microprogression notes, deload adjustments (3:1), and safe swaps respecting injuries/equipment. Return valid JSON only. Citations: ${citations.join(', ')}`;
-    const response = await client.responses.create({
+    const response = await client.chat.completions.create({
       model: 'gpt-4o-mini',
       temperature: 0.2,
-      input: [
+      response_format: { type: 'json_object' as any },
+      messages: [
         { role: 'system', content: 'Return JSON only.' },
         { role: 'user', content: prompt },
         { role: 'user', content: JSON.stringify(baseProgram) }
-      ] as any
+      ]
     } as any);
-    const text = (response as any).output_text ?? (response as any).choices?.[0]?.message?.content;
+    const text = (response as any).choices?.[0]?.message?.content;
     if (!text) return baseProgram;
     const jsonStart = text.indexOf('{');
     const jsonEnd = text.lastIndexOf('}');
@@ -177,11 +178,8 @@ export async function refineWithGPT(baseProgram: any, citations: string[]) {
 }
 
 export async function saveProgramToSupabase(program: any) {
-  try {
-    const { getSupabaseClient } = await import('./supabase');
-    const supabase = getSupabaseClient();
-    await supabase.from('programs').upsert({ id: program.program_id, name: program.name, data: program, paid: program.paid ?? false });
-  } catch {}
+  // Deprecated: prefer calling code to perform writes using a service client and handle errors
+  throw new Error('saveProgramToSupabase is deprecated. Use server route with service client to persist.');
 }
 
 export function canViewWeek(week: number, paid: boolean) {
