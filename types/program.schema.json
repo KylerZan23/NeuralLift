@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://neuralift.app/schemas/program.schema.json",
+  "title": "NeuralLiftProgram",
+  "type": "object",
+  "required": ["program_id", "name", "weeks", "metadata"],
+  "properties": {
+    "program_id": { "type": "string" },
+    "name": { "type": "string" },
+    "paid": { "type": "boolean", "default": false },
+    "weeks": {
+      "type": "array",
+      "minItems": 12,
+      "items": {
+        "type": "object",
+        "required": ["week_number", "days"],
+        "properties": {
+          "week_number": { "type": "integer", "minimum": 1, "maximum": 12 },
+          "days": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "required": ["day_number", "focus", "exercises"],
+              "properties": {
+                "day_number": { "type": "integer", "minimum": 1 },
+                "focus": { "type": "string" },
+                "exercises": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["id", "name", "sets", "reps", "rpe", "tempo", "rest_seconds"],
+                    "properties": {
+                      "id": { "type": "string" },
+                      "name": { "type": "string" },
+                      "sets": { "type": "integer", "minimum": 1, "maximum": 8 },
+                      "reps": { "type": "string" },
+                      "rpe": { "type": "number", "minimum": 5, "maximum": 10 },
+                      "tempo": { "type": "string" },
+                      "rest_seconds": { "type": "integer", "minimum": 30, "maximum": 300 },
+                      "intensity_pct": { "type": "number", "minimum": 0.4, "maximum": 0.9 }
+                    }
+                  }
+                },
+                "notes": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["created_at", "source", "volume_profile"],
+      "properties": {
+        "created_at": { "type": "string", "format": "date-time" },
+        "source": { "type": "array", "items": { "type": "string" } },
+        "volume_profile": { "type": "object", "additionalProperties": { "type": "integer" } }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
+
+
