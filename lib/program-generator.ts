@@ -152,35 +152,40 @@ function accessoryPoolForFocus(focus: string): string[] {
   const legsPool = lowerPool;
   const fullPool = Array.from(new Set([...upperPool, ...lowerPool]));
   const f = (focus || '').toLowerCase();
-  if (f.includes('upper') || f.includes('pull')) return Array.from(new Set([...upperPool, ...pullPool]));
+  const removeLateralRaises = (arr: string[]) => arr.filter(n => !/\blateral\s+raise\b/i.test(n));
+  if (f.includes('upper') || f.includes('pull')) return removeLateralRaises(Array.from(new Set([...upperPool, ...pullPool])));
   if (f.includes('push')) return pushPool;
   if (f.includes('lower') || f.includes('leg')) return legsPool;
   return fullPool;
 }
-function enforceSingleCoreAlternate(exs: Exercise[], dayIndexZeroBased: number): Exercise[] {
-  const desiredCore = CORE_EXERCISES[dayIndexZeroBased % CORE_EXERCISES.length];
-  const kept: Exercise[] = [];
-  let coreAdded = false;
-  for (const ex of exs) {
-    if (isCoreExercise(ex.name)) {
-      if (coreAdded) continue; // drop duplicates
-      kept.push({ ...ex, rest_seconds: 120 });
-      coreAdded = true;
-    } else {
-      kept.push(ex);
-    }
-  }
-  if (!coreAdded) kept.push(buildAccessory(desiredCore));
-  return kept;
+function pickCoreDayIndices(totalDays: number): number[] {
+  if (totalDays <= 0) return [];
+  if (totalDays === 1) return [0];
+  const first = 0;
+  let second = Math.floor(totalDays / 2);
+  if (second === first) second = Math.min(totalDays - 1, first + 1);
+  return [first, second];
+}
+
+function enforceCoreForDay(exs: Exercise[], desiredCoreName: string | null): Exercise[] {
+  // Remove all existing core moves first
+  const nonCore: Exercise[] = exs.filter(e => !isCoreExercise(e.name));
+  if (!desiredCoreName) return nonCore;
+  // Ensure exactly one core exercise with specified name
+  const coreEx = buildAccessory(desiredCoreName);
+  coreEx.rest_seconds = 120;
+  return [...nonCore, coreEx];
 }
 function dedupeByNamePreserveOrder(exs: Exercise[]): Exercise[] {
   const seen = new Set<string>();
   const out: Exercise[] = [];
   for (const ex of exs) {
-    const key = ex.name.trim().toLowerCase();
+    // Normalize forbidden or aliased names
+    const normalizedName = /barbell\s+row/i.test(ex.name) ? 'Chest-Supported Row' : ex.name;
+    const key = normalizedName.trim().toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push(ex);
+    out.push({ ...ex, name: normalizedName });
   }
   return out;
 }
@@ -196,9 +201,17 @@ function fillAccessoriesToCount(exs: Exercise[], desiredCount: number, focus: st
   }
   // If still short, add generic but unique numbered cable crunch variants avoiding duplicates (treated as accessories)
   while (exs.length < desiredCount) {
-    const filler = buildAccessory('Cable Lateral Raise');
-    if (!exs.some(e => e.name === filler.name)) exs.push(filler);
-    else exs.push(buildAccessory('Dumbbell Curl'));
+    const f = (focus || '').toLowerCase();
+    const fallbackName = f.includes('pull')
+      ? 'Chest-Supported Row'
+      : f.includes('push')
+        ? 'Cable Flye'
+        : f.includes('leg')
+          ? 'Leg Extension'
+          : 'Dumbbell Curl';
+    const filler = buildAccessory(fallbackName);
+    if (!exs.some(e => e.name.toLowerCase() === filler.name.toLowerCase())) exs.push(filler);
+    else exs.push(buildAccessory('Hammer Curl'));
   }
   return exs;
 }
@@ -245,7 +258,12 @@ function applySessionConstraints(program: Program, input: OnboardingInput): Prog
           rest_seconds: isMainCompound(e.name) ? 180 : Math.max(120, Math.min(180, e.rest_seconds ?? 120))
         } as Exercise));
         exs = dedupeByNamePreserveOrder(exs);
-        exs = enforceSingleCoreAlternate(exs, di);
+        // Core placement: exactly two sessions per week include core (Cable Crunch and Hanging Leg Raise)
+        const coreDays = pickCoreDayIndices((week.days ?? []).length);
+        const desiredCoreName = coreDays.includes(di)
+          ? CORE_EXERCISES[coreDays.indexOf(di)]
+          : null;
+        exs = enforceCoreForDay(exs, desiredCoreName);
         exs = fillAccessoriesToCount(exs, target, day.focus ?? '');
         exs = trimRespectingCoreAndCompound(exs, target);
         return { ...day, exercises: exs };
@@ -273,7 +291,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       exercises: [
         { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '5-8', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound, intensity_pct: sqPct },
         { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound, intensity_pct: bpPct },
-        { id: 'row-01', name: 'Barbell Row', sets: 3, reps: '6-10', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound },
+        { id: 'row-01', name: 'Chest-Supported Row', sets: 3, reps: '6-10', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound },
         { id: 'curl-01', name: 'EZ Bar Curl', sets: 2, reps: '10-12', rpe: 8, tempo: '2-0-1', rest_seconds: 60 },
         { id: 'tri-01', name: 'Overhead Triceps Extension', sets: 2, reps: '10-15', rpe: 8, tempo: '2-0-1', rest_seconds: 60 },
       ]
@@ -295,7 +313,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       focus: 'Upper',
       exercises: [
         { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound, intensity_pct: bpPct },
-        { id: 'row-01', name: 'Barbell Row', sets: 4, reps: '6-10', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound },
+        { id: 'row-01', name: 'Chest-Supported Row', sets: 4, reps: '6-10', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound },
         { id: 'ohp-01', name: 'Seated Dumbbell Shoulder Press', sets: 3, reps: '8-12', rpe: 8, tempo: '2-0-1', rest_seconds: restAccessory },
         { id: 'pull-01', name: 'Lat Pulldown', sets: 3, reps: '8-12', rpe: 8, tempo: '2-0-1', rest_seconds: restAccessory },
         { id: 'lat-01', name: 'Lateral Raise', sets: 2, reps: '12-15', rpe: 8, tempo: '2-1-1', rest_seconds: 60 },
@@ -329,7 +347,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       focus: 'Upper 1',
       exercises: [
         { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound, intensity_pct: bpPct },
-        { id: 'row-01', name: 'Barbell Row', sets: 4, reps: '6-10', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound },
+        { id: 'row-01', name: 'Chest-Supported Row', sets: 4, reps: '6-10', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound },
         { id: 'lat-01', name: 'Lateral Raise', sets: 2, reps: '12-15', rpe: 8, tempo: '2-1-1', rest_seconds: 60 },
         { id: 'tri-01', name: 'Overhead Triceps Extension', sets: 2, reps: '10-15', rpe: 8, tempo: '2-0-1', rest_seconds: 60 },
       ]
@@ -377,7 +395,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
     {
       focus: 'Pull',
       exercises: [
-        { id: 'row-01', name: 'Barbell Row', sets: 4, reps: '6-10', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound },
+        { id: 'row-01', name: 'Chest-Supported Row', sets: 4, reps: '6-10', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound },
         { id: 'pull-01', name: 'Lat Pulldown', sets: 3, reps: '8-12', rpe: 8, tempo: '2-0-1', rest_seconds: restAccessory },
         { id: 'face-01', name: 'Face Pull', sets: 3, reps: '12-15', rpe: 8, tempo: '2-1-1', rest_seconds: 60 },
         { id: 'curl-01', name: 'EZ Bar Curl', sets: 3, reps: '10-12', rpe: 8, tempo: '2-0-1', rest_seconds: 60 },
@@ -448,7 +466,12 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       // Start from template then apply constraints: dedupe, single core, fill unique accessories, trim if needed
       let exs: Exercise[] = d.exercises.map(e => ({ ...e, intensity_pct: e.intensity_pct ?? undefined, rest_seconds: isMainCompound(e.name) ? 180 : 120 } as Exercise));
       exs = dedupeByNamePreserveOrder(exs);
-      exs = enforceSingleCoreAlternate(exs, i);
+      // Align initial week with the same two-core-day policy
+      const coreDays = pickCoreDayIndices(selected.length);
+      const desiredCoreName = coreDays.includes(i)
+        ? CORE_EXERCISES[coreDays.indexOf(i)]
+        : null;
+      exs = enforceCoreForDay(exs, desiredCoreName);
       exs = fillAccessoriesToCount(exs, desiredCount, d.focus);
       exs = trimRespectingCoreAndCompound(exs, desiredCount);
       return { day_number: i + 1, focus: d.focus, exercises: exs, notes: d.notes };

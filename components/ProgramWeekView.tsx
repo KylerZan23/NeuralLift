@@ -26,14 +26,14 @@ export default function ProgramWeekView({ weekNumber, days, prs, experience }: {
       <h3 className="text-2xl font-bold text-gray-900">Week {weekNumber}</h3>
       <div className="mt-4 grid md:grid-cols-2 gap-6">
         {days.map(day => (
-          <div key={day.day_number} className="rounded-2xl border border-gray-200 p-4 bg-white">
+          <div key={day.day_number} className="rounded-xl border border-border/50 p-4 bg-card/50 backdrop-blur-sm">
             <h4 className="text-lg font-semibold text-gray-900">Day {day.day_number} — {day.focus}</h4>
             <ul className="mt-3 space-y-2">
               {day.exercises.map(ex => (
-                <li key={ex.id} className="flex items-start justify-between gap-3 rounded-xl bg-gray-50 p-3">
+                <li key={ex.id} className="flex items-start justify-between gap-3 rounded-lg bg-muted/50 p-3">
                   <div>
-                    <div className="font-medium text-gray-900">{ex.name}</div>
-                    <div className="text-sm text-gray-600">
+                    <div className="font-medium text-foreground">{ex.name}</div>
+                    <div className="text-sm text-muted-foreground">
                       {ex.sets} sets × {ex.reps} reps · RPE {ex.rpe} · Tempo {ex.tempo} · Rest {Math.round((ex.rest_seconds ?? 0) / 60)}m
                       {ex.intensity_pct != null ? <> · {Math.round(ex.intensity_pct * 100)}%</> : null}
                     </div>
@@ -42,7 +42,7 @@ export default function ProgramWeekView({ weekNumber, days, prs, experience }: {
                 </li>
               ))}
             </ul>
-            {day.notes ? <p className="mt-3 text-sm text-gray-700">{day.notes}</p> : null}
+            {day.notes ? <p className="mt-3 text-sm text-muted-foreground">{day.notes}</p> : null}
           </div>
         ))}
       </div>

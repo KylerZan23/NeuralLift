@@ -20,7 +20,7 @@ export default function OnboardingStepPage() {
   });
 
   const steps = useMemo(() => {
-    const base = [
+    const base: Array<any> = [
       { name: 'experience_level', q: 'What is your experience level?', options: ['Beginner', 'Intermediate', 'Advanced'] },
       { name: 'days_per_week', q: 'How many days per week can you train?', options: [2, 3, 4, 5, 6] },
       { name: 'equipment', q: 'What equipment do you have access to?', options: ['Gym', 'Home with barbell', 'Dumbbells only', 'Bands only'] },
@@ -28,18 +28,14 @@ export default function OnboardingStepPage() {
       { name: 'big3_squat', q: 'Your squat 1RM (lbs)', type: 'number' },
       { name: 'big3_deadlift', q: 'Your deadlift 1RM (lbs)', type: 'number' },
       { name: 'session_length', q: 'Preferred session length (minutes)', options: [30, 45, 60, 90] },
-    ] as const;
-    const extended = Number(state['days_per_week']) === 6
-      ? [
-          ...base,
-          { name: 'focus_point', q: 'If training 6x/week, pick a weak point to emphasize (optional)', options: ['Arms', 'Chest', 'Back', 'Quads', 'Glutes', 'Delts'] },
-          { name: 'notes', q: 'Any preferences or injury limitations? (optional)', type: 'text' },
-        ] as const
-      : [
-          ...base,
-          { name: 'notes', q: 'Any preferences or injury limitations? (optional)', type: 'text' },
-        ] as const;
-    return extended as ReadonlyArray<any>;
+    ];
+    if (Number(state['days_per_week']) === 6) {
+      const idx = base.findIndex(s => s.name === 'days_per_week');
+      const focusStep = { name: 'focus_point', q: 'Because you are training 6x week, pick a weak point to emphasize', options: ['Arms', 'Chest', 'Back', 'Quads', 'Glutes', 'Delts'] };
+      base.splice(idx + 1, 0, focusStep);
+    }
+    base.push({ name: 'notes', q: 'Any preferences or injury limitations? (optional)', type: 'text' });
+    return base as ReadonlyArray<any>;
   }, [state['days_per_week']]);
 
   const stepIdx = Math.max(0, Math.min(steps.length - 1, (Number(params.step) || 1) - 1));
@@ -68,8 +64,12 @@ export default function OnboardingStepPage() {
       const n = Number(v);
       return Number.isFinite(n) && n >= 2 && n <= 6;
     }
+    if (step.name === 'focus_point') {
+      const days = Number(state['days_per_week']);
+      const ok = ['Arms', 'Chest', 'Back', 'Quads', 'Glutes', 'Delts'].includes(String(v));
+      return days === 6 ? ok : true;
+    }
     if (step.type === 'text') return true;
-    if (step.name === 'focus_point') return true;
     return v != null && String(v).length > 0;
   }, [state, step]);
 
