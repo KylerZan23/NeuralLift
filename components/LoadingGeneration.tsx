@@ -2,13 +2,13 @@
 import { motion } from 'framer-motion';
 
 export default function LoadingGeneration({ answers }: { answers: Record<string, any> }) {
-  const split = answers.split ?? 'selected split';
+  const freq = answers.days_per_week ?? 'selected frequency';
   const equip = answers.equipment ?? 'available equipment';
   const level = answers.experience_level ?? 'experience level';
 
   const messages = [
     'Building your personalized 12-week plan…',
-    `Crafting your hypertrophy split tailored to your ${split} and ${equip}…`,
+    `Designing an optimal hypertrophy split for ${freq} days/week with your ${equip}…`,
     `Fine-tuning volume to match your experience level: ${level}.`,
     'Almost done — optimizing sets and rest for your goals.',
   ];

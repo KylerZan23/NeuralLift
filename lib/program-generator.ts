@@ -6,13 +6,14 @@ export const OnboardingInput = z.object({
   sex: z.enum(['male', 'female']).optional(),
   BW: z.number().optional(),
   experience_level: z.enum(['Beginner', 'Intermediate', 'Advanced']),
-  training_frequency_preference: z.number().int().min(3).max(6),
+  training_frequency_preference: z.number().int().min(2).max(6),
   equipment_available: z.array(z.string()).default([]),
   goals: z.array(z.string()).default(['hypertrophy']),
   big3_PRs: z.object({ bench: z.number().optional(), squat: z.number().optional(), deadlift: z.number().optional() }),
   injuries: z.array(z.string()).default([]),
   movement_preferences: z.array(z.string()).default([]),
-  preferred_split: z.enum(['Push/Pull/Legs', 'Upper/Lower', 'Full body', 'Custom']).default('Upper/Lower'),
+  preferred_split: z.enum(['Push/Pull/Legs', 'Upper/Lower', 'Full body', 'Custom']).optional(),
+  focus_point: z.enum(['Arms', 'Chest', 'Back', 'Quads', 'Glutes', 'Delts']).optional(),
   session_length_min: z.number().int().min(30).max(120).default(60),
   rest_pref: z.enum(['auto', 'custom']).default('auto'),
   nutrition: z.enum(['deficit', 'surplus', 'maintenance']).default('maintenance')
@@ -93,7 +94,46 @@ export function generateFullProgram(input: OnboardingInput) {
     const volumeMultiplier = cyclePos === 4 ? 0.6 : 1 + 0.05 * (cyclePos - 1); // 1.0, 1.05, 1.10, 0.6
     const intensityBump = cyclePos === 4 ? -0.05 : 0.01 * (w - 1); // slight upward trend, deload down
 
-    const adjustedDays = baseWeek.days.slice(0, daysPerWeek).map(day => ({
+    let plannedDays = baseWeek.days.slice(0, Math.min(daysPerWeek, 6));
+    if (daysPerWeek === 2) {
+      plannedDays = [
+        { ...baseWeek.days[0], focus: 'Full body A' },
+        { ...baseWeek.days[1], focus: 'Full body B' }
+      ];
+    } else if (daysPerWeek === 3) {
+      plannedDays = [
+        { ...baseWeek.days[0], focus: 'Upper' },
+        { ...baseWeek.days[1], focus: 'Lower' },
+        { ...baseWeek.days[2], focus: 'Full body' }
+      ];
+    } else if (daysPerWeek === 4) {
+      plannedDays = [
+        { ...baseWeek.days[0], focus: 'Upper 1' },
+        { ...baseWeek.days[1], focus: 'Lower 1' },
+        { ...baseWeek.days[2], focus: 'Upper 2' },
+        { ...baseWeek.days[3], focus: 'Lower 2' }
+      ];
+    } else if (daysPerWeek === 5) {
+      plannedDays = [
+        { ...baseWeek.days[0], focus: 'Push' },
+        { ...baseWeek.days[2], focus: 'Pull' },
+        { ...baseWeek.days[3], focus: 'Legs' },
+        { ...baseWeek.days[1], focus: 'Upper' },
+        { ...baseWeek.days[4], focus: 'Lower' }
+      ];
+    } else if (daysPerWeek === 6) {
+      const focus = input.focus_point ?? 'Arms';
+      plannedDays = [
+        { ...baseWeek.days[0], focus: 'Push' },
+        { ...baseWeek.days[2], focus: 'Pull' },
+        { ...baseWeek.days[3], focus: 'Legs' },
+        { ...baseWeek.days[1], focus: 'Upper' },
+        { ...baseWeek.days[4], focus: 'Lower' },
+        { ...baseWeek.days[2], focus: `Focus — ${focus}` }
+      ];
+    }
+
+    const adjustedDays = plannedDays.map(day => ({
       ...day,
       exercises: day.exercises.map(ex => {
         const sets = Math.max(1, Math.round(ex.sets * volumeMultiplier));

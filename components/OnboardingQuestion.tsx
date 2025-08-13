@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react';
 type Option = { label: string; value: string | number };
 type Props = {
   step: number;
+  totalSteps: number;
   question: string;
   description?: string;
   name: string;
@@ -19,7 +20,7 @@ type Props = {
 };
 
 export default function OnboardingQuestion({
-  step, question, description, name, type = 'select', options = [], value, onChange, onNext, onPrev, isValid, submitting = false, nextLabel,
+  step, totalSteps, question, description, name, type = 'select', options = [], value, onChange, onNext, onPrev, isValid, submitting = false, nextLabel,
 }: Props) {
   const inputId = useMemo(() => `oq-${name}`, [name]);
 
@@ -30,22 +31,28 @@ export default function OnboardingQuestion({
 
   return (
     <div className="mx-auto max-w-2xl p-6 md:p-8 rounded-3xl bg-white/70 backdrop-blur-xl shadow-xl">
-      <div aria-live="polite" className="text-sm text-gray-600">Step {step} of 10</div>
+      <div aria-live="polite" className="text-sm text-gray-600">Step {step} of {totalSteps}</div>
       <h2 className="mt-2 text-2xl md:text-3xl font-bold text-gray-900">{question}</h2>
       {description ? <p className="mt-2 text-gray-700">{description}</p> : null}
 
       <div className="mt-6">
         {type === 'select' && (
-          <select
-            id={inputId}
-            aria-label={question}
-            className="w-full rounded-xl border border-gray-300 bg-white p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            value={String(value ?? '')}
-            onChange={(e) => onChange(e.target.value)}
-          >
-            <option value="">Select an option</option>
-            {options.map(o => <option key={String(o.value)} value={String(o.value)}>{o.label}</option>)}
-          </select>
+          <div role="group" aria-label={question} id={inputId} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {options.map(o => {
+              const isActive = String(value ?? '') === String(o.value);
+              return (
+                <button
+                  key={String(o.value)}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => onChange(o.value)}
+                  className={`w-full text-left rounded-2xl border p-4 transition focus-visible:ring-2 focus-visible:ring-indigo-500 ${isActive ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 bg-white hover:bg-gray-50'}`}
+                >
+                  <span className="font-medium text-gray-900">{o.label}</span>
+                </button>
+              );
+            })}
+          </div>
         )}
 
         {type === 'text' && (

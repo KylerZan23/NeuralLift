@@ -4,6 +4,8 @@ import ValidityCard from '@/components/ValidityCard';
 import { useCallback } from 'react';
 import { getSupabaseClient } from '@/lib/supabase';
 import { fetchLatestProgramIdForUser } from '@/lib/programs';
+import TopNav from '@/components/TopNav';
+import PRProgressChart from '@/components/PRProgressChart';
 
 export default function DashboardPage() {
   const onGenerateNew = useCallback(async () => {
@@ -20,11 +22,13 @@ export default function DashboardPage() {
   }, []);
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 p-6 text-white">
+      <TopNav />
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-extrabold">Dashboard</h1>
           <button onClick={onGenerateNew} className="rounded-xl bg-white text-gray-900 px-4 py-2 font-semibold">Generate a new program</button>
         </div>
+        <PRProgressChart />
         <PRDashboard />
         <div>
           <h2 className="text-2xl font-bold">Validity</h2>

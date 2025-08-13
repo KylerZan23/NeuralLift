@@ -13,6 +13,7 @@ type Story = StoryObj<typeof OnboardingQuestion>;
 export const Choice: Story = {
   args: {
     step: 2,
+    totalSteps: 8,
     question: 'What is your training experience level?',
     name: 'experience_level',
     type: 'select',
@@ -32,6 +33,7 @@ export const Choice: Story = {
 export const NumberInput: Story = {
   args: {
     step: 5,
+    totalSteps: 8,
     question: 'Enter your bench press 1RM (lb)',
     name: 'big3_bench',
     type: 'number',

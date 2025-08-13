@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     training_frequency_preference: 5,
     equipment_available: ['Gym'],
     big3_PRs: { bench: 185, squat: 185, deadlift: 225 },
-    preferred_split: 'Push/Pull/Legs',
+    preferred_split: undefined,
     session_length_min: 60
   });
 

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import ProgramWeekView, { Day } from '@/components/ProgramWeekView';
 import GatingModal from '@/components/GatingModal';
+import TopNav from '@/components/TopNav';
 
 type Program = {
   program_id: string;
@@ -58,6 +59,7 @@ export default function ProgramPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 p-6 text-white">
+      <TopNav programId={program.program_id} />
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex items-center justify-between">
           <h1 className="text-3xl font-extrabold">{program.name}</h1>
