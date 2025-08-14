@@ -47,11 +47,9 @@ export default function HomePage() {
 
               <div className="space-y-6">
                 <h1 className="font-display font-bold text-5xl lg:text-7xl leading-tight text-foreground">
-                  Elevate Your{' '}
-                  <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text">
-                    Fitness Journey
-                  </span>{' '}
-                  with AI Precision
+                  Take the guesswork out of{' '}
+                  <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text">science-based</span>{' '}
+                  lifting
                 </h1>
 
                 <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl">
@@ -147,11 +145,11 @@ export default function HomePage() {
             </Badge>
             <h2 className="font-display font-bold text-4xl lg:text-5xl text-foreground">
               Everything You Need to{' '}
-              <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text">Succeed</span>
+              <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text">Progress</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Our AI-powered platform combines cutting-edge exercise science with modern science-based lifting
-              methodologies to provide science-based lifting tailored to you.
+              methodologies to create optimal training tailored to you.
             </p>
           </div>
 
@@ -161,37 +159,19 @@ export default function HomePage() {
                 icon: <Smartphone className="w-8 h-8" />,
                 title: 'Personalized Workouts Tailored Just for You',
                 description:
-                  'AI analyzes your fitness level, goals, and available equipment to create the perfect program.',
+                  'AI analyzes your experience level, preferences, equipment, and strength to create the most optimal program for you.',
                 color: 'primary'
               },
               {
                 icon: <BarChart3 className="w-8 h-8" />,
-                title: 'Real-Time Feedback for Optimal Performance',
-                description: 'Track your progress with intelligent insights and adaptive recommendations.',
+                title: 'Track Your Progress for Optimal Performance',
+                description: 'Track your personal records over time to monitor adaptation and growth.',
                 color: 'accent'
-              },
-              {
-                icon: <Users className="w-8 h-8" />,
-                title: 'Join a Community of Achievers',
-                description: 'Connect with like-minded individuals and share your fitness journey.',
-                color: 'primary'
               },
               {
                 icon: <Shield className="w-8 h-8" />,
                 title: 'Science-Based Methodology',
                 description: 'Every workout is backed by the latest research in exercise science and physiology.',
-                color: 'accent'
-              },
-              {
-                icon: <Target className="w-8 h-8" />,
-                title: 'Goal-Oriented Programming',
-                description: "Whether it's strength, endurance, or body composition - we've got you covered.",
-                color: 'primary'
-              },
-              {
-                icon: <Zap className="w-8 h-8" />,
-                title: 'Adaptive Intelligence',
-                description: 'Your program evolves with you, ensuring continuous progress and preventing plateaus.',
                 color: 'accent'
               }
             ].map((feature, index) => (
@@ -221,15 +201,10 @@ export default function HomePage() {
           <Card className="p-12 bg-gradient-to-br from-primary/5 via-card to-accent/5 border-border/50 shadow-2xl">
             <div className="space-y-8">
               <div className="space-y-4">
-                <h2 className="font-display font-bold text-4xl lg:text-5xl text-foreground">
-                  Ready to Transform Your{' '}
-                  <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text">
-                    Fitness Journey?
-                  </span>
-                </h2>
+                <h2 className="font-display font-bold text-4xl lg:text-5xl text-foreground">Ready to train optimally?</h2>
                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                  Join thousands of users who have already discovered the power of AI-driven fitness. Your personalized
-                  program is just one click away.
+                  Join thousands of users who have already simplified their science-based lifting journey. Your
+                  personalized program is just one click away.
                 </p>
               </div>
 
@@ -239,7 +214,7 @@ export default function HomePage() {
                   onClick={gotoOnboarding}
                   className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
                 >
-                  Start Your Free Trial
+                  Generate Your Program Now
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
 
@@ -252,7 +227,7 @@ export default function HomePage() {
                 </Button>
               </div>
 
-              <p className="text-sm text-muted-foreground">No credit card required • 14-day free trial • Cancel anytime</p>
+              <p className="text-sm text-muted-foreground">Generate a 12-week program for free</p>
             </div>
           </Card>
         </div>
@@ -266,7 +241,7 @@ export default function HomePage() {
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
                 Privacy Policy
               </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
                 Terms of Service
               </a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
