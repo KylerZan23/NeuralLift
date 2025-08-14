@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 import programSchema from '@/types/program.schema.json';
 import type { Program } from '@/types/program';
 
@@ -29,6 +30,7 @@ type Exercise = {
 };
 
 const ajv = new Ajv({ allErrors: true, strict: false });
+addFormats(ajv);
 const validateProgram = ajv.compile(programSchema as any);
 
 function coerceProgramId(p: any, programId: string): any {
@@ -257,6 +259,23 @@ function dedupeByNamePreserveOrder(exs: Exercise[], mode: EquipmentMode): Exerci
   }
   return out;
 }
+
+function ensureNoCalfRaiseConflict(exs: Exercise[]): Exercise[] {
+  const isStanding = (n: string) => /standing\s+calf\s+raise/i.test(n);
+  const isSeated = (n: string) => /seated\s+calf\s+raise/i.test(n);
+  let standingIndex = -1;
+  let seatedIndex = -1;
+  exs.forEach((e, i) => {
+    const name = e.name ?? '';
+    if (standingIndex === -1 && isStanding(name)) standingIndex = i;
+    if (seatedIndex === -1 && isSeated(name)) seatedIndex = i;
+  });
+  if (standingIndex >= 0 && seatedIndex >= 0) {
+    const removeIndex = Math.max(standingIndex, seatedIndex);
+    return exs.filter((_, i) => i !== removeIndex);
+  }
+  return exs;
+}
 function fillAccessoriesToCount(exs: Exercise[], desiredCount: number, focus: string): Exercise[] {
   if (exs.length >= desiredCount) return exs;
   const names = new Set(exs.map(e => e.name.toLowerCase()));
@@ -329,6 +348,8 @@ function applySessionConstraints(program: Program, input: OnboardingInput): Prog
         // Equipment substitutions first
         exs = exs.map(e => ({ ...e, name: substituteExerciseForEquipment(e.name, mode) }));
         exs = dedupeByNamePreserveOrder(exs, mode);
+        // Avoid conflicting calf raises within a single session
+        exs = ensureNoCalfRaiseConflict(exs);
         // Core placement: exactly two sessions per week include core (Cable Crunch and Hanging Leg Raise)
         const coreDays = pickCoreDayIndices((week.days ?? []).length);
         const coreNames = equipmentCoreExercises(mode);
@@ -338,6 +359,8 @@ function applySessionConstraints(program: Program, input: OnboardingInput): Prog
         // Re-run equipment substitutions for any newly added accessories
         exs = exs.map(e => ({ ...e, name: substituteExerciseForEquipment(e.name, mode) }));
         exs = dedupeByNamePreserveOrder(exs, mode);
+        // Re-apply calf conflict rule after substitutions/fills
+        exs = ensureNoCalfRaiseConflict(exs);
         exs = trimRespectingCoreAndCompound(exs, target);
         return { ...day, exercises: exs };
       })
@@ -546,11 +569,14 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       const coreDays = pickCoreDayIndices(selected.length);
       const coreNames = equipmentCoreExercises(mode);
       const desiredCoreName = coreDays.includes(i) ? coreNames[coreDays.indexOf(i)] : null;
+      // Enforce calf raise conflict rule
+      exs = ensureNoCalfRaiseConflict(exs);
       exs = enforceCoreForDay(exs, desiredCoreName);
       exs = fillAccessoriesToCount(exs, desiredCount, d.focus);
       // Re-run equipment substitutions after filling accessories
       exs = exs.map(e => ({ ...e, name: substituteExerciseForEquipment(e.name, mode) }));
       exs = dedupeByNamePreserveOrder(exs, mode);
+      exs = ensureNoCalfRaiseConflict(exs);
       exs = trimRespectingCoreAndCompound(exs, desiredCount);
       return { day_number: i + 1, focus: d.focus, exercises: exs, notes: d.notes };
     })

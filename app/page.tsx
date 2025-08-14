@@ -1,19 +1,44 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ensureAuthOrStartOAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import ProgramWeekView from '@/components/ProgramWeekView';
 import Badge from '@/components/ui/badge';
 import { ArrowRight, Zap, Target, Users, Smartphone, BarChart3, Shield } from 'lucide-react';
+import { getSupabaseClient } from '@/lib/supabase';
 
 export default function HomePage() {
   const router = useRouter();
+  const [email, setEmail] = useState<string | null>(null);
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+  }, []);
   const gotoOnboarding = useCallback(async () => {
     const result = await ensureAuthOrStartOAuth('/onboarding/1');
     if (result === 'proceeded') router.push('/onboarding/1');
   }, [router]);
+  const gotoAbout = useCallback(() => {
+    router.push('/about');
+  }, [router]);
+  const sampleDays = [
+    {
+      day_number: 1,
+      focus: 'Push',
+      exercises: [
+        { id: 'bb-bench', name: 'Barbell Bench Press', sets: 3, reps: '5-8', rpe: 8, tempo: '2-0-1', rest_seconds: 180 },
+        { id: 'incline-db-press', name: 'Incline Dumbbell Press', sets: 3, reps: '8-10', rpe: 8, tempo: '2-0-1', rest_seconds: 120 },
+        { id: 'db-shoulder-press', name: 'Seated Dumbbell Shoulder Press', sets: 2, reps: '5-8', rpe: 8, tempo: '2-0-1', rest_seconds: 120 },
+        { id: 'cable-lateral-raise', name: 'Cable Lateral Raise', sets: 3, reps: '10-12', rpe: 8, tempo: '2-1-1', rest_seconds: 90 },
+        { id: 'oh-cable-tricep-ext', name: 'Overhead Cable Tricep Extension', sets: 3, reps: '5-8', rpe: 8, tempo: '2-0-1', rest_seconds: 120 },
+        { id: 'cable-tricep-kickback', name: 'Cable Tricep Kickback', sets: 2, reps: '10-12', rpe: 8, tempo: '2-0-1', rest_seconds: 90 },
+        { id: 'cable-crunches', name: 'Cable Crunches', sets: 2, reps: '10-12', rpe: 8, tempo: '2-0-1', rest_seconds: 90 }
+      ]
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[oklch(0.985_0.015_240)] via-card to-[oklch(0.985_0.01_240)]">
@@ -29,7 +54,7 @@ export default function HomePage() {
                 onClick={gotoOnboarding}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
               >
-                Sign up with Google
+                {email ? `Continue as ${email}` : 'Sign up with Google'}
               </Button>
             </div>
           </div>
@@ -87,46 +112,21 @@ export default function HomePage() {
 
             <div className="relative">
               <div className="relative z-10 animate-float">
-                <Card className="p-8 bg-card/50 backdrop-blur-sm border-border/50 shadow-2xl">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-display font-semibold text-xl">Weekly Overview</h3>
-                      <Badge variant="secondary">Week 4</Badge>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg border border-primary/10">
-                        <div className="flex items-center gap-3">
-                          <div className="w-3 h-3 bg-primary rounded-full"></div>
-                          <span className="font-medium">Upper Body Strength</span>
-                        </div>
-                        <span className="text-sm text-muted-foreground">45 min</span>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 bg-accent/5 rounded-lg border border-accent/10">
-                        <div className="flex items-center gap-3">
-                          <div className="w-3 h-3 bg-accent rounded-full"></div>
-                          <span className="font-medium">HIIT Cardio</span>
-                        </div>
-                        <span className="text-sm text-muted-foreground">30 min</span>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
-                        <div className="flex items-center gap-3">
-                          <div className="w-3 h-3 bg-muted-foreground rounded-full"></div>
-                          <span className="font-medium">Recovery & Mobility</span>
-                        </div>
-                        <span className="text-sm text-muted-foreground">20 min</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-border">
-                      <p className="text-sm text-muted-foreground text-center">
-                        Beautiful weekly views, volume targets, and progression rules built-in.
-                      </p>
-                    </div>
-                  </div>
-                </Card>
+                <ProgramWeekView
+                  weekNumber={1}
+                  days={sampleDays}
+                  singleColumn
+                  twoColumnExercises
+                  exerciseSplitLeftCount={4}
+                  prs={{ bench: 185 }}
+                  experience={'Intermediate'}
+                  suggestedWeightOverrides={{
+                    'Incline Dumbbell Press': { low: 60, high: 70, perHand: true },
+                    'Seated Dumbbell Shoulder Press': { low: 50, high: 60, perHand: true },
+                    'Cable Lateral Raise': { low: 15, high: 25, perHand: true },
+                    'Cable Crunches': null
+                  }}
+                />
               </div>
 
               <div className="absolute -top-4 -right-4 w-72 h-72 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full blur-3xl -z-10"></div>
@@ -201,7 +201,9 @@ export default function HomePage() {
           <Card className="p-12 bg-gradient-to-br from-primary/5 via-card to-accent/5 border-border/50 shadow-2xl">
             <div className="space-y-8">
               <div className="space-y-4">
-                <h2 className="font-display font-bold text-4xl lg:text-5xl text-foreground">Ready to train optimally?</h2>
+                <h2 className="font-display font-bold text-4xl lg:text-5xl text-foreground">
+                  Ready to train <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text">optimally?</span>
+                </h2>
                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                   Join thousands of users who have already simplified their science-based lifting journey. Your
                   personalized program is just one click away.
@@ -221,6 +223,7 @@ export default function HomePage() {
                 <Button
                   variant="secondary"
                   size="lg"
+                  onClick={gotoAbout}
                   className="border-2 border-border hover:border-primary/50 px-8 py-4 text-lg font-medium transition-all duration-300 hover:scale-105 bg-transparent text-foreground"
                 >
                   Learn More
@@ -238,13 +241,13 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="font-display font-bold text-2xl text-foreground">NeuralLift</div>
             <div className="flex items-center gap-8">
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="/terms#privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors">
                 Privacy Policy
               </a>
               <a href="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
                 Terms of Service
               </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
                 Contact
               </a>
             </div>

@@ -15,6 +15,19 @@ export default function TermsPage() {
           <p className="text-lg text-muted-foreground">Please read these policies carefully.</p>
         </div>
 
+        <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50">
+          <section className="space-y-3">
+            <h2 id="contact" className="font-display font-bold text-2xl text-foreground">Contact me</h2>
+            <p className="text-muted-foreground">
+              Contact me{' '}
+              <Link href="mailto:admin@neurallift.com" className="underline">
+                here
+              </Link>
+              .
+            </p>
+          </section>
+        </Card>
+
         <Card className="p-8 bg-card/50 backdrop-blur-sm border-border/50">
           <section className="space-y-6">
             <h2 className="font-display font-bold text-3xl text-foreground">Terms of Service</h2>
@@ -187,7 +200,7 @@ export default function TermsPage() {
 
         <Card className="p-8 bg-card/50 backdrop-blur-sm border-border/50">
           <section className="space-y-6">
-            <h2 className="font-display font-bold text-3xl text-foreground">Privacy Policy</h2>
+            <h2 id="privacy-policy" className="font-display font-bold text-3xl text-foreground">Privacy Policy</h2>
             <p className="text-sm text-muted-foreground">Effective Date: 8/13/25 • Last Updated: 8/13/25</p>
             <div className="prose prose-neutral max-w-none leading-relaxed text-foreground">
               <p>

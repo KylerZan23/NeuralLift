@@ -2,6 +2,7 @@
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
 import { getSupabaseClient } from '@/lib/supabase';
+import type { Program as ProgramType } from '@/types/program';
 import LoadingGeneration from '@/components/LoadingGeneration';
 import OnboardingQuestion from '@/components/OnboardingQuestion';
 
@@ -75,6 +76,12 @@ export default function OnboardingStepPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [showLoader, setShowLoader] = useState(false);
+
+  type Program = ProgramType;
+  function isProgram(payload: unknown): payload is Program {
+    const p = payload as any;
+    return p && typeof p === 'object' && typeof p.program_id === 'string' && Array.isArray(p.weeks);
+  }
 
   const onNext = async () => {
     if (!isValid) return;
@@ -158,13 +165,22 @@ export default function OnboardingStepPage() {
           } catch {}
         }
       } catch {}
-      fetch('/api/generate-program', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-        .then(r => r.json())
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      fetch('/api/generate-program', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify(payload) })
+        .then(async (r) => {
+          const body = await r.json().catch(() => null);
+          if (!r.ok || !isProgram(body)) throw new Error('Program generation failed');
+          return body as Program;
+        })
         .then((p) => {
           try { localStorage.removeItem('onboarding_state'); } catch {}
           router.push(`/program/${p.program_id}`);
         })
-        .catch(() => router.push('/dashboard'))
+        .catch(() => {
+          alert('Could not generate program. Please sign in and try again.');
+          router.push('/dashboard');
+        })
         .finally(() => setSubmitting(false));
     }
   };

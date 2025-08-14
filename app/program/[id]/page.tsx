@@ -1,20 +1,27 @@
-'use client';
-import { useEffect, useMemo, useState } from 'react';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import ProgramWeekView, { Day } from '@/components/ProgramWeekView';
-import { getSupabaseClient } from '@/lib/supabase';
-import type { Big3PRs } from '@/lib/weight-prescription';
-import GatingModal from '@/components/GatingModal';
-import TopNav from '@/components/TopNav';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+ 'use client';
+ import { useEffect, useMemo, useState } from 'react';
+ import { useParams, useSearchParams, useRouter } from 'next/navigation';
+ import ProgramWeekView, { Day } from '@/components/ProgramWeekView';
+ import { getSupabaseClient } from '@/lib/supabase';
+ import type { Big3PRs } from '@/lib/weight-prescription';
+ import GatingModal from '@/components/GatingModal';
+ import TopNav from '@/components/TopNav';
+ import { Button } from '@/components/ui/button';
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+ import type { Program as ProgramType } from '@/types/program';
 
-type Program = {
-  program_id: string;
-  name: string;
-  paid: boolean;
-  weeks: { week_number: number; days: Day[] }[];
-};
+ type Program = ProgramType;
+
+ function isProgram(payload: unknown): payload is Program {
+   const p = payload as any;
+   return (
+     p != null &&
+     typeof p === 'object' &&
+     typeof p.program_id === 'string' &&
+     typeof p.name === 'string' &&
+     Array.isArray(p.weeks)
+   );
+ }
 
 export default function ProgramPage() {
   const params = useParams<{ id: string }>();
@@ -31,10 +38,16 @@ export default function ProgramPage() {
   useEffect(() => {
     const id = Array.isArray(params.id) ? params.id[0] : params.id;
     fetch(`/api/program/${id}`, { method: 'GET' })
-      .then(r => r.json())
+      .then(async (r) => {
+        const body = await r.json().catch(() => null);
+        if (!r.ok || !isProgram(body)) {
+          throw new Error('Failed to load program');
+        }
+        return body as Program;
+      })
       .then((p) => {
         setProgram(p);
-        const meta = (p?.metadata ?? {}) as any;
+        const meta = (p.metadata ?? {}) as any;
         if (meta?.big3_prs) setPrs(meta.big3_prs);
         if (meta?.experience_level) setExperience(meta.experience_level);
       })
@@ -125,9 +138,12 @@ export default function ProgramPage() {
                     <TabsContent key={w} value={String(w)}>
                       <ProgramWeekView
                         weekNumber={w}
-                        days={program.weeks.find(week => week.week_number === w)?.days ?? []}
+                        days={program?.weeks?.find(week => week.week_number === w)?.days ?? []}
                         prs={prs ?? undefined}
                         experience={experience}
+                        singleColumn
+                        twoColumnExercises
+                        exerciseSplitLeftCount={4}
                       />
                     </TabsContent>
                   ))}

@@ -27,10 +27,19 @@ Key vars:
 - yarn storybook
 
 ## API
-- POST `/api/generate-program` — body: `{ programId?, useGPT? (default true), userId?, input }` -> creates 12-week program and upserts to DB. When `OPENAI_API_KEY` is present and `useGPT=true`, uses LLM-first generation; otherwise deterministic fallback.
-- GET `/api/program/:id` — fetch program by id.
+- POST `/api/generate-program` — body: `{ programId?, useGPT? (default true), input }` -> creates 12-week program and upserts to DB for the authenticated user (derived server-side). When `OPENAI_API_KEY` is present and `useGPT=true`, uses LLM-first generation; otherwise deterministic fallback.
+- GET `/api/program/:id` — fetch program by id. Requires auth; enforces ownership on server.
 - POST `/api/pr/update` — upsert PRs for the authenticated user `{ bench?, squat?, deadlift? }`.
-- POST `/api/stripe-session` — returns Checkout URL. Supports `reason: 'unlock_full_program' | 'regenerate_program'` and `userId` metadata.
+- POST `/api/stripe-session` — returns Checkout URL. Supports `reason: 'unlock_full_program' | 'regenerate_program'`. Server derives user and verifies program ownership; `userId` is no longer accepted from client.
+
+### Rate limiting
+- `POST /api/generate-program` applies a 5 req/min per IP rate limit. If `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set, it uses Upstash Redis REST; otherwise an in-memory fallback is used.
+
+### Validation formats
+- AJV is configured with `ajv-formats` to support `date-time` and other common formats. This silences prior console warnings.
+
+### Database migrations
+- New migration `0007_programs_user_not_null.sql` enforces `programs.user_id` as NOT NULL (ownership required). Run in Supabase SQL editor.
 - Body is validated; `programId` required. Session line items use Stripe Price ID from env.
 - POST `/api/stripe-webhook` — marks `programs.paid = true` via service role.
 

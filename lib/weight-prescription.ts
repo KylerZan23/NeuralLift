@@ -31,6 +31,7 @@ const ACCESSORY_MAPPINGS: AccessoryMap[] = [
   { pattern: /\bdips?\b/i, base: 'bench', ratioLow: 0.50, ratioHigh: 0.60 },
   { pattern: /triceps?.*pushdown/i, base: 'bench', ratioLow: 0.35, ratioHigh: 0.45 },
   { pattern: /(overhead\s+)?triceps?.*extension/i, base: 'bench', ratioLow: 0.30, ratioHigh: 0.40 },
+  { pattern: /cable\s+tricep\s+kickback/i, base: 'bench', ratioLow: 0.15, ratioHigh: 0.25 },
 
   // Pull rows/pulls
   { pattern: /\bbarbell\s+row\b|chest[- ]supported\s+row|\brow\b/i, base: 'deadlift', ratioLow: 0.45, ratioHigh: 0.55 },

@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
             user_id: userId ?? null,
             program_id: programId,
             reason: reason ?? 'unlock_full_program',
-            amount_cents: session.amount_total ?? null,
+            amount_cents: session.amount_total ?? 0,
             stripe_session_id: session.id
           });
         }

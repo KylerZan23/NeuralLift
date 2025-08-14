@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase';
 import { fetchLatestProgramIdForUser } from '@/lib/programs';
+import AuthButton from '@/components/AuthButton';
 
 type Props = {
   programId?: string | null;
@@ -36,6 +37,7 @@ export default function TopNav({ programId }: Props) {
           <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">Home</Link>
           <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link>
           <Link href={programHref} className="text-muted-foreground hover:text-foreground transition-colors">Program</Link>
+          <AuthButton />
         </div>
       </div>
     </nav>
