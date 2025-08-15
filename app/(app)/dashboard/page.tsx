@@ -2,13 +2,13 @@
 import PRDashboard from '@/components/PRDashboard';
 import ValidityCard from '@/components/ValidityCard';
 import { useCallback } from 'react';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/integrations/supabase';
 import { fetchLatestProgramIdForUser } from '@/lib/programs';
 import TopNav from '@/components/TopNav';
 import PRProgressChart from '@/components/PRProgressChart';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import Badge from '@/components/ui/badge';
+import { Button } from '@/lib/ui/button';
+import { Card } from '@/lib/ui/card';
+import Badge from '@/lib/ui/badge';
 
 export default function DashboardPage() {
   const onGenerateNew = useCallback(async () => {

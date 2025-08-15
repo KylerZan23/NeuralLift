@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/integrations/supabase';
 import { fetchLatestProgramIdForUser } from '@/lib/programs';
 import AuthButton from '@/components/AuthButton';
 

@@ -22,9 +22,9 @@ export async function ensureAuthOrStartOAuth(redirectTo: string): Promise<'proce
     }
     const { data: oauthData } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: base ? { redirectTo: `${base}${redirectTo}`, skipBrowserRedirect: true } as any : { skipBrowserRedirect: true } as any
+      options: base ? { redirectTo: `${base}${redirectTo}`, skipBrowserRedirect: true } : { skipBrowserRedirect: true }
     });
-    const url = (oauthData as any)?.url as string | undefined;
+    const url = oauthData?.url;
     if (typeof window !== 'undefined' && url) {
       if (popup && !popup.closed) {
         try { popup.location.href = url; } catch { popup = window.open(url, 'neuralift_google_oauth'); }
@@ -72,14 +72,14 @@ export async function ensureAuthOrStartOAuth(redirectTo: string): Promise<'proce
 
         // Safety: clean up when promise settles
         const finalize = (value: 'proceeded' | 'started_oauth') => {
-          try { (sub as any)?.subscription?.unsubscribe?.(); } catch {}
+          sub?.data?.subscription?.unsubscribe?.();
           try { popup?.close(); } catch {}
           return value;
         };
 
         // Wrap resolve to ensure cleanup
         const originalResolve = resolve;
-        // @ts-expect-error
+        // @ts-expect-error - Overriding resolve to ensure cleanup
         resolve = (v: 'proceeded' | 'started_oauth') => originalResolve(finalize(v));
       });
     }

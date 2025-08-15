@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createCheckoutSession } from '@/lib/stripe';
-import { getServiceSupabaseClient } from '@/lib/supabase-server';
+import { createCheckoutSession } from '@/lib/integrations/stripe';
+import { getServiceSupabaseClient } from '@/lib/integrations/supabase-server';
 import { z } from 'zod';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 const BodySchema = z.object({
@@ -26,10 +26,10 @@ export async function POST(req: NextRequest) {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: CookieOptions) {
           cookieStore.set(name, value, options);
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: CookieOptions) {
           cookieStore.set(name, '', { ...options, maxAge: 0 });
         }
       }

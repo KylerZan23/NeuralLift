@@ -111,8 +111,7 @@ export function describeBasis(exerciseName: string): { base: BaseLift; ratioRang
 
 export function computeSuggestedWorkingWeightRange(
   exerciseName: string,
-  prs: Big3PRs,
-  experience: ExperienceLevel = 'Intermediate'
+  prs: Big3PRs
 ): { low: number; high: number; perHand: boolean } | null {
   const mapping = findAccessoryMapping(exerciseName);
   if (!mapping) return null;

@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ESNext",
     "lib": [
       "DOM",
-      "ES2022"
+      "DOM.Iterable",
+      "ESNext"
     ],
     "jsx": "preserve",
     "module": "ESNext",
@@ -17,7 +18,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "*"
+        "./*"
       ]
     },
     "types": [
@@ -27,6 +28,9 @@
     "incremental": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
     "plugins": [
       {
         "name": "next"

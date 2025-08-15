@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/lib/ui/button';
+import { Input } from '@/lib/ui/input';
 
 type Option = { label: string; value: string | number };
 type Props = {

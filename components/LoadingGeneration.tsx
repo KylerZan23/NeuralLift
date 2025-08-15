@@ -1,7 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
 
-export default function LoadingGeneration({ answers }: { answers: Record<string, any> }) {
+export default function LoadingGeneration({ answers }: { answers: Record<string, string | number | undefined> }) {
   const freq = answers.days_per_week ?? 'selected frequency';
   const equip = answers.equipment ?? 'available equipment';
   const level = answers.experience_level ?? 'experience level';

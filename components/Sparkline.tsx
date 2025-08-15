@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/integrations/supabase';
 
 type Props = {
   values: number[];
@@ -27,7 +27,7 @@ export default function Sparkline({ values, width = 160, height = 40, stroke = '
           .eq('user_id', userId)
           .order('created_at', { ascending: true });
         if (Array.isArray(data)) {
-          setHistory(data.map((row: any) => Number(row[metric] || 0)).filter(Boolean));
+          setHistory(data.map((row: Record<string, unknown>) => Number(row[metric] || 0)).filter(Boolean));
         }
       } catch {
         setHistory(null);

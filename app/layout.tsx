@@ -1,7 +1,7 @@
 import './globals.css';
 import type { ReactNode } from 'react';
 import { Space_Grotesk, DM_Sans } from 'next/font/google';
-import { ToastProvider, ToastViewport } from '@/components/ui/toast';
+import { ToastProvider, ToastViewport } from '@/lib/ui/toast';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], display: 'swap', variable: '--font-space-grotesk' });
 const dmSans = DM_Sans({ subsets: ['latin'], display: 'swap', variable: '--font-dm-sans' });

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/integrations/supabase';
 
 type HistoryRow = { created_at: string; bench: number | null; squat: number | null; deadlift: number | null };
 
@@ -26,9 +26,10 @@ export default function PRProgressChart() {
           .eq('user_id', userId)
           .order('created_at', { ascending: true });
         if (err) throw new Error(err.message);
-        setRows((data as any[]) as HistoryRow[]);
-      } catch (e: any) {
-        setError(e?.message ?? 'Failed to load');
+        setRows(data as HistoryRow[]);
+      } catch (e) {
+        const error = e as Error;
+        setError(error?.message ?? 'Failed to load');
       } finally {
         setLoading(false);
       }
@@ -63,7 +64,7 @@ export default function PRProgressChart() {
 
   const buildPath = (key: 'bench' | 'squat' | 'deadlift', color: string) => {
     const pts: Array<[number, number]> = rows
-      .map((r) => ({ t: new Date(r.created_at).getTime(), v: Number((r as any)[key] || 0) }))
+      .map((r) => ({ t: new Date(r.created_at).getTime(), v: Number(r[key] || 0) }))
       .filter(p => p.v > 0)
       .map(p => [scaleX(p.t), scaleY(p.v)]);
     if (pts.length === 0) return null;

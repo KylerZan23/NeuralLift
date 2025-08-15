@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
+import Ajv, { type ErrorObject, type Schema } from 'ajv';
+import addFormats from 'aj-formats';
 import programSchema from '@/types/program.schema.json';
-import type { Program } from '@/types/program';
+import type { Program, Day } from '@/types/program';
+import type { ChatCompletionCreateParams } from 'openai/resources/chat';
 
 export const OnboardingInput = z.object({
   id: z.string().optional(),
@@ -25,21 +26,19 @@ export const OnboardingInput = z.object({
 
 export type OnboardingInput = z.infer<typeof OnboardingInput>;
 
-type Exercise = {
-  id: string; name: string; sets: number; reps: string; rpe: number; tempo: string; rest_seconds: number; intensity_pct?: number;
-};
+type Exercise = Day['exercises'][0];
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 addFormats(ajv);
-const validateProgram = ajv.compile(programSchema as any);
+const validateProgram = ajv.compile(programSchema as Schema);
 
-function coerceProgramId(p: any, programId: string): any {
+function coerceProgramId(p: Program, programId: string): Program {
   if (!p || typeof p !== 'object') return p;
   p.program_id = programId;
   return p;
 }
 
-function ensureMetadata(p: any): any {
+function ensureMetadata(p: Program): Program {
   const created = new Date().toISOString();
   const defaults = {
     created_at: created,
@@ -51,7 +50,7 @@ function ensureMetadata(p: any): any {
   return p;
 }
 
-function toProgramOrThrow(p: any): Program {
+function toProgramOrThrow(p: unknown): Program {
   const ok = validateProgram(p);
   if (!ok) {
     const errs = JSON.stringify(validateProgram.errors ?? []);
@@ -60,7 +59,7 @@ function toProgramOrThrow(p: any): Program {
   return p as Program;
 }
 
-async function repairWithModel(raw: string, errors: any[]): Promise<string | null> {
+async function repairWithModel(raw: string, errors: ErrorObject[]): Promise<string | null> {
   if (!process.env.OPENAI_API_KEY) return null;
   try {
     const { OpenAI } = await import('openai');
@@ -68,13 +67,13 @@ async function repairWithModel(raw: string, errors: any[]): Promise<string | nul
     const response = await client.chat.completions.create({
       model: 'gpt-4o',
       temperature: 0.1,
-      response_format: { type: 'json_object' as any },
+      response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: 'You return strictly valid JSON matching the provided schema. No prose.' },
         { role: 'user', content: `Fix this program JSON to pass the schema. Only return corrected JSON.\nErrors:\n${JSON.stringify(errors)}\nJSON:\n${raw}` }
       ]
-    } as any);
-    const text = (response as any).choices?.[0]?.message?.content;
+    } as ChatCompletionCreateParams);
+    const text = response.choices?.[0]?.message?.content;
     return text ?? null;
   } catch {
     return null;
@@ -97,7 +96,7 @@ function buildUserProfile(input: OnboardingInput): string {
     `Preferred split: ${input.preferred_split ?? 'auto'}.`,
     `Rest preference: ${input.rest_pref}.`,
     `Nutrition: ${input.nutrition}.`,
-    `PRs (lbs): bench=${(pr as any).bench ?? 'n/a'}, squat=${(pr as any).squat ?? 'n/a'}, deadlift=${(pr as any).deadlift ?? 'n/a'}.`,
+    `PRs (lbs): bench=${pr.bench ?? 'n/a'}, squat=${pr.squat ?? 'n/a'}, deadlift=${pr.deadlift ?? 'n/a'}.`,
     `Injuries: ${inj || 'none'}.`,
     `Movement prefs: ${prefs || 'none'}.`,
     focus
@@ -381,7 +380,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
   const sqPct = Math.min(0.78, basePct);
   const dlPct = Math.min(0.8, basePct);
 
-  const twoDay: { focus: string; exercises: Exercise[]; notes?: string }[] = [
+  const twoDay: Day[] = [
     {
       focus: 'Full Body A',
       exercises: [
@@ -404,7 +403,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
     }
   ];
 
-  const threeDay = [
+  const threeDay: Day[] = [
     {
       focus: 'Upper',
       exercises: [
@@ -438,7 +437,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
     }
   ];
 
-  const fourDay = [
+  const fourDay: Day[] = [
     {
       focus: 'Upper 1',
       exercises: [
@@ -477,7 +476,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
     }
   ];
 
-  const fiveDay = [
+  const fiveDay: Day[] = [
     {
       focus: 'Push',
       exercises: [
@@ -527,7 +526,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
   ];
 
   const sixDayFocus = input.focus_point ?? 'Arms';
-  const sixDay = [
+  const sixDay: Day[] = [
     fiveDay[0], // Push
     fiveDay[1], // Pull
     fiveDay[2], // Legs
@@ -545,13 +544,13 @@ export function generateDeterministicWeek(input: OnboardingInput) {
   ];
 
   const daysPerWeek = input.training_frequency_preference;
-  let selected: { focus: string; exercises: Exercise[]; notes?: string }[];
+  let selected: Day[];
   if (daysPerWeek === 2) selected = twoDay;
-  else if (daysPerWeek === 3) selected = threeDay as any;
-  else if (daysPerWeek === 4) selected = fourDay as any;
-  else if (daysPerWeek === 5) selected = fiveDay as any;
-  else if (daysPerWeek === 6) selected = sixDay as any;
-  else selected = threeDay as any;
+  else if (daysPerWeek === 3) selected = threeDay;
+  else if (daysPerWeek === 4) selected = fourDay;
+  else if (daysPerWeek === 5) selected = fiveDay;
+  else if (daysPerWeek === 6) selected = sixDay;
+  else selected = threeDay;
 
   // Enforce exercise counts per session length: 30→4, 45→5, 60→6, 90→7
   const desiredCount = desiredExerciseCount(input.session_length_min);
@@ -584,8 +583,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
 }
 
 export function generateFullProgram(input: OnboardingInput) {
-  const weeks = [] as Array<{ week_number: number; days: any[] }>;
-  const daysPerWeek = input.training_frequency_preference;
+  const weeks: Program['weeks'] = [];
   for (let w = 1; w <= 12; w++) {
     const baseWeek = generateDeterministicWeek(input);
     // Progression: 3-week accumulation, 1-week deload cycle
@@ -640,7 +638,7 @@ export function enforceDaysSplit(program: Program, input: OnboardingInput): Prog
   }
 }
 
-export async function refineWithGPT(baseProgram: any, citations: string[]) {
+export async function refineWithGPT(baseProgram: Program, citations: string[]): Promise<Program> {
   if (!process.env.OPENAI_API_KEY) return baseProgram;
   try {
     const { OpenAI } = await import('openai');
@@ -649,19 +647,19 @@ export async function refineWithGPT(baseProgram: any, citations: string[]) {
     const response = await client.chat.completions.create({
       model: 'gpt-4o',
       temperature: 0.2,
-      response_format: { type: 'json_object' as any },
+      response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: 'Return JSON only.' },
         { role: 'user', content: prompt },
         { role: 'user', content: JSON.stringify(baseProgram) }
       ]
-    } as any);
-    const text = (response as any).choices?.[0]?.message?.content;
+    } as ChatCompletionCreateParams);
+    const text = response.choices?.[0]?.message?.content;
     if (!text) return baseProgram;
     const jsonStart = text.indexOf('{');
     const jsonEnd = text.lastIndexOf('}');
     if (jsonStart >= 0 && jsonEnd > jsonStart) {
-      const refined = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
+      const refined = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as Program;
       return refined;
     }
   } catch {
@@ -696,38 +694,38 @@ export async function generateProgramWithLLM(
     const response = await client.chat.completions.create({
       model: 'gpt-4o',
       temperature: 0.2,
-      response_format: { type: 'json_object' as any },
+      response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `User profile:\n${userProfile}\nProgram id: ${programId}\nCitations to include in metadata.source: ${citations.join(', ')}` }
       ]
-    } as any);
+    } as ChatCompletionCreateParams);
 
-    const text = (response as any).choices?.[0]?.message?.content ?? '';
+    const text = response.choices?.[0]?.message?.content ?? '';
     const jsonStart = text.indexOf('{');
     const jsonEnd = text.lastIndexOf('}');
     if (jsonStart < 0 || jsonEnd <= jsonStart) throw new Error('No JSON in response');
-    const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
+    const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as Program;
     let prepared = ensureMetadata(coerceProgramId(parsed, programId));
-    (prepared as any).user_id = opts?.userId;
-    (prepared as any).metadata = {
-      ...(prepared as any).metadata,
+    prepared.user_id = opts?.userId;
+    prepared.metadata = {
+      ...prepared.metadata,
       big3_prs: input.big3_PRs ?? {},
       experience_level: input.experience_level
     };
-    prepared = enforceDaysSplit(prepared as Program, input);
-    prepared = applySessionConstraints(prepared as Program, input);
+    prepared = enforceDaysSplit(prepared, input);
+    prepared = applySessionConstraints(prepared, input);
     try {
       return toProgramOrThrow(prepared);
     } catch {
       const repaired = await repairWithModel(JSON.stringify(prepared), validateProgram.errors ?? []);
       if (repaired) {
-        const reparsed = JSON.parse(repaired);
+        const reparsed = JSON.parse(repaired) as Program;
         let final = ensureMetadata(coerceProgramId(reparsed, programId));
-        final = enforceDaysSplit(final as Program, input);
-        final = applySessionConstraints(final as Program, input);
-        (final as any).metadata = {
-          ...(final as any).metadata,
+        final = enforceDaysSplit(final, input);
+        final = applySessionConstraints(final, input);
+        final.metadata = {
+          ...final.metadata,
           big3_prs: input.big3_PRs ?? {},
           experience_level: input.experience_level
         };
@@ -749,7 +747,7 @@ export async function generateProgramWithLLM(
   }
 }
 
-export async function saveProgramToSupabase(program: any) {
+export async function saveProgramToSupabase(): Promise<void> {
   // Deprecated: prefer calling code to perform writes using a service client and handle errors
   throw new Error('saveProgramToSupabase is deprecated. Use server route with service client to persist.');
 }

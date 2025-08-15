@@ -1,10 +1,17 @@
 'use client';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/integrations/supabase';
 import type { Program as ProgramType } from '@/types/program';
 import LoadingGeneration from '@/components/LoadingGeneration';
 import OnboardingQuestion from '@/components/OnboardingQuestion';
+
+type OnboardingStep = {
+  name: string;
+  q: string;
+  options?: (string | number)[];
+  type?: 'number' | 'text';
+};
 
 export default function OnboardingStepPage() {
   const router = useRouter();
@@ -20,10 +27,10 @@ export default function OnboardingStepPage() {
     return {};
   });
 
-  const [steps, setSteps] = useState<ReadonlyArray<any>>([]);
+  const [steps, setSteps] = useState<ReadonlyArray<OnboardingStep>>([]);
 
   useEffect(() => {
-    const base: Array<any> = [
+    const base: OnboardingStep[] = [
       { name: 'experience_level', q: 'What is your experience level?', options: ['Beginner', 'Intermediate', 'Advanced'] },
       { name: 'days_per_week', q: 'How many days per week can you train?', options: [2, 3, 4, 5, 6] },
       { name: 'equipment', q: 'What equipment do you have access to?', options: ['Gym', 'Home with barbell', 'Dumbbells only'] },
@@ -34,15 +41,15 @@ export default function OnboardingStepPage() {
     ];
     if (Number(state['days_per_week']) === 6) {
       const idx = base.findIndex(s => s.name === 'days_per_week');
-      const focusStep = { name: 'focus_point', q: 'Because you are training 6x week, pick a weak point to emphasize', options: ['Arms', 'Chest', 'Back', 'Quads', 'Glutes', 'Delts'] };
+      const focusStep: OnboardingStep = { name: 'focus_point', q: 'Because you are training 6x week, pick a weak point to emphasize', options: ['Arms', 'Chest', 'Back', 'Quads', 'Glutes', 'Delts'] };
       base.splice(idx + 1, 0, focusStep);
     }
     base.push({ name: 'notes', q: 'Any preferences or injury limitations? (optional)', type: 'text' });
-    setSteps(base as ReadonlyArray<any>);
+    setSteps(base);
   }, [state]);
 
   const stepIdx = Math.max(0, Math.min(steps.length - 1, (Number(params.step) || 1) - 1));
-  const step = steps[stepIdx] as any;
+  const step = steps[stepIdx];
 
   // Persist on change
   useEffect(() => {
@@ -80,7 +87,7 @@ export default function OnboardingStepPage() {
 
   type Program = ProgramType;
   function isProgram(payload: unknown): payload is Program {
-    const p = payload as any;
+    const p = payload as Program;
     return p && typeof p === 'object' && typeof p.program_id === 'string' && Array.isArray(p.weeks);
   }
 
@@ -115,9 +122,9 @@ export default function OnboardingStepPage() {
         programId: crypto.randomUUID(),
         useGPT: true,
         input: {
-          experience_level: exp as any,
+          experience_level: exp,
           training_frequency_preference: days,
-          equipment_available: state['equipment'] ? [state['equipment'] as any] : [],
+          equipment_available: state['equipment'] ? [state['equipment']] : [],
           goals: ['hypertrophy'],
           big3_PRs: {
             bench: toNum(state['big3_bench']),
@@ -125,7 +132,7 @@ export default function OnboardingStepPage() {
             deadlift: toNum(state['big3_deadlift'])
           },
           preferred_split: undefined,
-          focus_point: state['focus_point'] as any,
+          focus_point: state['focus_point'] as string | undefined,
           session_length_min: sess,
           rest_pref: 'auto',
           nutrition: 'maintenance'
@@ -204,8 +211,8 @@ export default function OnboardingStepPage() {
           <LoadingGeneration
             answers={{
               days_per_week: state['days_per_week'],
-              equipment: state['equipment'],
-              experience_level: state['experience_level']
+              equipment: state['equipment'] as string,
+              experience_level: state['experience_level'] as string
             }}
           />
         ) : (
@@ -216,8 +223,8 @@ export default function OnboardingStepPage() {
                 question={step.q}
                 description="Answer honestly for the best plan."
                 name={step.name}
-                type={(step as any).type as any}
-                options={Array.isArray(step.options) ? step.options.map((o: any) => ({ label: String(o), value: o })) : []}
+                type={step.type}
+                options={Array.isArray(step.options) ? step.options.map(o => ({ label: String(o), value: o })) : []}
                 value={state[step.name]}
                 onChange={(v) => setState(prev => ({ ...prev, [step.name]: v }))}
                 onNext={onNext}

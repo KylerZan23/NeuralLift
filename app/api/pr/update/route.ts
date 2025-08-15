@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServiceSupabaseClient } from '@/lib/supabase-server';
+import { getServiceSupabaseClient } from '@/lib/integrations/supabase-server';
 import { z } from 'zod';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 const BodySchema = z.object({
@@ -26,10 +26,10 @@ export async function POST(req: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value;
           },
-          set(name: string, value: string, options: any) {
+          set(name: string, value: string, options: CookieOptions) {
             cookieStore.set(name, value, options);
           },
-          remove(name: string, options: any) {
+          remove(name: string, options: CookieOptions) {
             cookieStore.set(name, '', { ...options, maxAge: 0 });
           }
         }
@@ -46,8 +46,9 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     await service.from('pr_history').insert({ user_id: user.id, bench, squat, deadlift, created_at: now });
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message ?? 'Unexpected error' }, { status: 500 });
+  } catch (e) {
+    const error = e as Error;
+    return NextResponse.json({ error: error.message ?? 'Unexpected error' }, { status: 500 });
   }
 }
 

@@ -1,19 +1,19 @@
  'use client';
- import { useEffect, useMemo, useState } from 'react';
+ import { useEffect, useState } from 'react';
  import { useParams, useSearchParams, useRouter } from 'next/navigation';
- import ProgramWeekView, { Day } from '@/components/ProgramWeekView';
- import { getSupabaseClient } from '@/lib/supabase';
- import type { Big3PRs } from '@/lib/weight-prescription';
+ import ProgramWeekView from '@/components/ProgramWeekView';
+ import { getSupabaseClient } from '@/lib/integrations/supabase';
+ import type { Big3PRs } from '@/lib/core/weight-prescription';
  import GatingModal from '@/components/GatingModal';
  import TopNav from '@/components/TopNav';
- import { Button } from '@/components/ui/button';
- import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+ import { Button } from '@/lib/ui/button';
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/lib/ui/tabs';
  import type { Program as ProgramType } from '@/types/program';
 
  type Program = ProgramType;
 
  function isProgram(payload: unknown): payload is Program {
-   const p = payload as any;
+   const p = payload as Program;
    return (
      p != null &&
      typeof p === 'object' &&
@@ -47,13 +47,13 @@ export default function ProgramPage() {
       })
       .then((p) => {
         setProgram(p);
-        const meta = (p.metadata ?? {}) as any;
+        const meta = p.metadata as { big3_prs?: Big3PRs, experience_level?: 'Beginner' | 'Intermediate' | 'Advanced' } | undefined;
         if (meta?.big3_prs) setPrs(meta.big3_prs);
         if (meta?.experience_level) setExperience(meta.experience_level);
       })
       .catch(() => setProgram(null))
       .finally(() => setLoading(false));
-  }, [params.id, search?.get('checkout')]);
+  }, [params.id, search]);
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -73,7 +73,7 @@ export default function ProgramPage() {
     if (prs && (prs.bench || prs.squat || prs.deadlift)) return;
     try {
       const raw = localStorage.getItem('pending_prs');
-      if (raw) setPrs(JSON.parse(raw));
+      if (raw) setPrs(JSON.parse(raw) as Big3PRs);
     } catch {}
   }, [prs]);
 
@@ -89,7 +89,6 @@ export default function ProgramPage() {
       router.replace(url);
       return () => clearTimeout(timeout);
     }
-    return;
   }, [search, router, params.id]);
 
   if (loading) return <div className="min-h-screen grid place-items-center text-white/90">Loading program…</div>;

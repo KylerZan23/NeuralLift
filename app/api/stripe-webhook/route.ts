@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
-import { stripe } from '@/lib/stripe';
-import { getServiceSupabaseClient } from '@/lib/supabase-server';
+import { stripe } from '@/lib/integrations/stripe';
+import { getServiceSupabaseClient } from '@/lib/integrations/supabase-server';
 import type Stripe from 'stripe';
 
 export async function POST(req: NextRequest) {
@@ -13,8 +13,9 @@ export async function POST(req: NextRequest) {
   let event;
   try {
     event = stripe.webhooks.constructEvent(payload, sig, secret);
-  } catch (err: any) {
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+  } catch (err) {
+    const error = err as Error;
+    return NextResponse.json({ error: `Webhook Error: ${error.message}` }, { status: 400 });
   }
 
   if (event.type === 'checkout.session.completed') {
@@ -42,8 +43,9 @@ export async function POST(req: NextRequest) {
             stripe_session_id: session.id
           });
         }
-      } catch (e: any) {
-        return NextResponse.json({ error: 'Processing error', details: e?.message ?? String(e) }, { status: 500 });
+      } catch (e) {
+        const error = e as Error;
+        return NextResponse.json({ error: 'Processing error', details: error?.message ?? String(e) }, { status: 500 });
       }
     }
   }

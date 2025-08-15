@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { OnboardingInput, generateFullProgram, refineWithGPT, generateProgramWithLLM } from '@/lib/program-generator';
-import Ajv from 'ajv';
+import { OnboardingInput, generateFullProgram, generateProgramWithLLM } from '@/lib/core/program-generator';
+import Ajv, { type Schema } from 'ajv';
 import addFormats from 'ajv-formats';
 import programSchema from '@/types/program.schema.json';
-import { getServiceSupabaseClient } from '@/lib/supabase-server';
+import { getServiceSupabaseClient } from '@/lib/integrations/supabase-server';
 import type { Program } from '@/types/program';
 import { z } from 'zod';
-import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createClient, type User } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 addFormats(ajv);
-const validateProgram = ajv.compile(programSchema as any);
+const validateProgram = ajv.compile(programSchema as Schema);
 
 const RateLimitSchema = z.object({
   ip: z.string().min(1),
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   
   // Derive authenticated user on the server; prefer cookies but also support Authorization: Bearer <token>
   const cookieStore = cookies();
-  let user: any = null;
+  let user: User | null = null;
   try {
     const authClient = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -61,10 +61,10 @@ export async function POST(req: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value;
           },
-          set(name: string, value: string, options: any) {
+          set(name: string, value: string, options: CookieOptions) {
             cookieStore.set(name, value, options);
           },
-          remove(name: string, options: any) {
+          remove(name: string, options: CookieOptions) {
             cookieStore.set(name, '', { ...options, maxAge: 0 });
           }
         }
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
         const direct = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          { global: { headers: { Authorization: `Bearer ${token}` } } as any }
+          { global: { headers: { Authorization: `Bearer ${token}` } } }
         );
         const { data: auth } = await direct.auth.getUser();
         user = auth?.user ?? null;
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';
     const key = `gen:${ip}:${new Date().getUTCMinutes()}`;
     RateLimitSchema.parse({ ip, key });
-    const { isAllowedAndConsume } = await import('@/lib/rate-limit');
+    const { isAllowedAndConsume } = await import('@/lib/utils/rate-limit');
     const ok = await isAllowedAndConsume({ key, limit: 5, windowSeconds: 60 });
     if (!ok) return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   } catch {}

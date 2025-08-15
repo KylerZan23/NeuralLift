@@ -1,7 +1,7 @@
 'use client';
-import { Fragment, useMemo } from 'react';
-import { computeSuggestedWorkingWeight, computeSuggestedWorkingWeightRange, type Big3PRs, type ExperienceLevel } from '@/lib/weight-prescription';
-import { cn } from '@/lib/utils';
+import { useMemo } from 'react';
+import { computeSuggestedWorkingWeightRange, type Big3PRs, type ExperienceLevel } from '@/lib/core/weight-prescription';
+import { cn } from '@/lib/utils/utils';
 
 export type Exercise = {
   id: string;
@@ -23,7 +23,7 @@ export type Day = {
 
 type WeightOverride = { low: number; high: number; perHand?: boolean } | null;
 
-export default function ProgramWeekView({ weekNumber, days, prs, experience, singleColumn, twoColumnExercises = false, exerciseSplitLeftCount, suggestedWeightOverrides }: { weekNumber: number; days: Day[]; prs?: Big3PRs; experience?: ExperienceLevel; singleColumn?: boolean; twoColumnExercises?: boolean; exerciseSplitLeftCount?: number; suggestedWeightOverrides?: Record<string, WeightOverride> }) {
+export default function ProgramWeekView({ weekNumber, days, prs, experience, singleColumn, twoColumnExercises = false, suggestedWeightOverrides }: { weekNumber: number; days: Day[]; prs?: Big3PRs; experience?: ExperienceLevel; singleColumn?: boolean; twoColumnExercises?: boolean; exerciseSplitLeftCount?: number; suggestedWeightOverrides?: Record<string, WeightOverride> }) {
   return (
     <section aria-label={`Week ${weekNumber}`} className="rounded-2xl bg-white/80 backdrop-blur-md p-4 shadow-xl">
       <h3 className="text-xl font-bold text-gray-900">Week {weekNumber}</h3>

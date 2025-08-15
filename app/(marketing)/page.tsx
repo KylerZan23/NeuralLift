@@ -2,13 +2,13 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { ensureAuthOrStartOAuth } from '@/lib/auth';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { ensureAuthOrStartOAuth } from '@/lib/utils/auth';
+import { Button } from '@/lib/ui/button';
+import { Card } from '@/lib/ui/card';
 import ProgramWeekView from '@/components/ProgramWeekView';
-import Badge from '@/components/ui/badge';
-import { ArrowRight, Zap, Target, Users, Smartphone, BarChart3, Shield } from 'lucide-react';
-import { getSupabaseClient } from '@/lib/supabase';
+import Badge from '@/lib/ui/badge';
+import { ArrowRight, Zap, Target, Smartphone, BarChart3, Shield } from 'lucide-react';
+import { getSupabaseClient } from '@/lib/integrations/supabase';
 
 export default function HomePage() {
   const router = useRouter();

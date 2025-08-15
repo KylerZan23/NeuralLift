@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/integrations/supabase';
 import { ensureAuthOrStartOAuth } from '@/lib/auth';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/lib/ui/button';
 
 export default function AuthButton() {
   const [email, setEmail] = useState<string | null>(null);

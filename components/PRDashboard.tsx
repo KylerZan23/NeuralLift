@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/integrations/supabase';
 import { fetchLatestProgramIdForUser } from '@/lib/programs';
 import Sparkline from './Sparkline';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Label } from '@/lib/ui/label';
+import { Input } from '@/lib/ui/input';
+import { Button } from '@/lib/ui/button';
 
 export default function PRDashboard() {
   const [bench, setBench] = useState<number | ''>('');

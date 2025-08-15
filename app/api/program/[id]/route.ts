@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServiceSupabaseClient } from '@/lib/supabase-server';
-import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceSupabaseClient } from '@/lib/integrations/supabase-server';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createClient, type User } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import type { Program } from '@/types/program';
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Derive authenticated user to enforce RLS-like ownership on server fetch as well (cookie or bearer)
     const cookieStore = cookies();
-    let user: any = null;
+    let user: User | null = null;
     try {
       const authClient = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,10 +19,10 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
             get(name: string) {
               return cookieStore.get(name)?.value;
             },
-            set(name: string, value: string, options: any) {
+            set(name: string, value: string, options: CookieOptions) {
               cookieStore.set(name, value, options);
             },
-            remove(name: string, options: any) {
+            remove(name: string, options: CookieOptions) {
               cookieStore.set(name, '', { ...options, maxAge: 0 });
             }
           }
@@ -41,7 +42,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
           const direct = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            { global: { headers: { Authorization: `Bearer ${token}` } } as any }
+            { global: { headers: { Authorization: `Bearer ${token}` } } }
           );
           const { data: auth } = await direct.auth.getUser();
           user = auth?.user ?? null;
@@ -53,15 +54,18 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     const supabase = getServiceSupabaseClient();
     const { data, error } = await supabase.from('programs').select('data,user_id,paid').eq('id', params.id).single();
     if (error) return NextResponse.json({ error: error.message }, { status: 404, headers: { 'Cache-Control': 'private, max-age=15' } });
-    if ((data as any)?.user_id && (data as any).user_id !== user.id) {
+    
+    const programData = data as { data: Program, user_id: string, paid: boolean };
+    if (programData?.user_id && programData.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    return new NextResponse(JSON.stringify((data as any)?.data ?? null), {
+    return new NextResponse(JSON.stringify(programData?.data ?? null), {
       status: 200,
       headers: { 'Cache-Control': 'private, max-age=15', 'Content-Type': 'application/json' }
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    const error = e as Error;
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 

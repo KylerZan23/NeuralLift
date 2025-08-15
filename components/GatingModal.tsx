@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '@/lib/ui/dialog';
+import { Button } from '@/lib/ui/button';
 
 type Reason = 'unlock_full_program' | 'regenerate_program';
 export default function GatingModal({ open, onClose, programId, reason = 'unlock_full_program' }: { open: boolean; onClose: () => void; programId: string; reason?: Reason }) {
