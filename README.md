@@ -8,16 +8,43 @@ Science-based lifting tailored to you. Generate and unlock a 12-week hypertrophy
 - OpenAI (LLM-first generation with deterministic fallback), Framer Motion
 - Jest + Testing Library, Storybook
 
-## Env
-Create `.env.local` from `env.example` and set values.
+## Environment Setup & Security
 
-Key vars:
-- NEXT_PUBLIC_BASE_URL
-- NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
-- SUPABASE_SERVICE_ROLE_KEY (server-only)
-- STRIPE_SECRET, NEXT_PUBLIC_STRIPE_PUBLISHABLE, STRIPE_WEBHOOK_SECRET
-- STRIPE_PRICE_PROGRAM_UNLOCK (Stripe Price ID for program unlock)
-- OPENAI_API_KEY (required for personalized LLM generation; if omitted we fall back to deterministic rules)
+**⚠️ CRITICAL: Never commit environment files to version control!**
+
+1. Copy `env.example` to `.env.local`
+2. Fill in your actual API keys and secrets
+3. Ensure `.env.local` is in your `.gitignore` (already configured)
+
+### Required Environment Variables
+
+**Supabase Configuration:**
+- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Public anon key (safe for client)
+- `SUPABASE_SERVICE_ROLE_KEY` - Service role key (server-only, keep secret!)
+
+**Application Configuration:**
+- `NEXT_PUBLIC_BASE_URL` - Your app's base URL (e.g., http://localhost:3000)
+
+**Stripe Configuration:**
+- `STRIPE_SECRET` - Stripe secret key (server-only, keep secret!)
+- `STRIPE_WEBHOOK_SECRET` - Webhook endpoint secret
+- `STRIPE_PRICE_PROGRAM_UNLOCK` - Stripe Price ID for program unlock
+
+**AI Configuration:**
+- `OPENAI_API_KEY` - OpenAI API key (server-only, keep secret!)
+
+**Optional - Redis (for rate limiting):**
+- `UPSTASH_REDIS_REST_URL` - Redis REST API URL
+- `UPSTASH_REDIS_REST_TOKEN` - Redis REST API token
+
+### Security Best Practices
+- ✅ Use `.env.local` for local development
+- ✅ Never commit `.env.local` to Git
+- ✅ Use `NEXT_PUBLIC_` prefix only for client-safe variables
+- ✅ Keep service keys and secrets server-side only
+- ✅ Rotate API keys regularly
+- ✅ Use environment-specific files (`.env.production`, `.env.staging`) for deployments
 
 ## Scripts
 - yarn dev
