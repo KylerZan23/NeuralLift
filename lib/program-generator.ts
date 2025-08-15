@@ -670,17 +670,21 @@ export async function refineWithGPT(baseProgram: any, citations: string[]) {
   return baseProgram;
 }
 
-export async function generateProgramWithLLM(input: OnboardingInput, opts?: { programId?: string; citations?: string[] }): Promise<Program> {
+export async function generateProgramWithLLM(
+  input: OnboardingInput,
+  opts?: { programId?: string; citations?: string[]; userId?: string }
+): Promise<Program> {
   const programId = opts?.programId ?? crypto.randomUUID();
   if (!process.env.OPENAI_API_KEY) {
     const weeks = generateFullProgram(input);
     const fallback: Program = {
       program_id: programId,
+      user_id: opts?.userId,
       name: '12-week Hypertrophy Program',
       paid: false,
       weeks,
       metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {}, big3_prs: input.big3_PRs ?? {}, experience_level: input.experience_level }
-    };
+    } as Program;
     return fallback;
   }
   try {
@@ -705,6 +709,7 @@ export async function generateProgramWithLLM(input: OnboardingInput, opts?: { pr
     if (jsonStart < 0 || jsonEnd <= jsonStart) throw new Error('No JSON in response');
     const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
     let prepared = ensureMetadata(coerceProgramId(parsed, programId));
+    (prepared as any).user_id = opts?.userId;
     (prepared as any).metadata = {
       ...(prepared as any).metadata,
       big3_prs: input.big3_PRs ?? {},
@@ -734,11 +739,12 @@ export async function generateProgramWithLLM(input: OnboardingInput, opts?: { pr
     const weeks = generateFullProgram(input);
     const fallback: Program = {
       program_id: programId,
+      user_id: opts?.userId,
       name: '12-week Hypertrophy Program',
       paid: false,
       weeks,
       metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {}, big3_prs: input.big3_PRs ?? {}, experience_level: input.experience_level }
-    };
+    } as Program;
     return fallback;
   }
 }

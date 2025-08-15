@@ -23,6 +23,7 @@ export type Week = {
 
 export type Program = {
   program_id: string;
+  user_id?: string;
   name: string;
   paid: boolean;
   weeks: Week[];

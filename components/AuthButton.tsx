@@ -10,6 +10,19 @@ export default function AuthButton() {
   useEffect(() => {
     const supabase = getSupabaseClient();
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        try {
+          localStorage.removeItem('onboarding_state');
+        } catch {}
+        setEmail(session?.user?.email ?? null);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
@@ -19,6 +32,9 @@ export default function AuthButton() {
   const signOut = async () => {
     const supabase = getSupabaseClient();
     await supabase.auth.signOut();
+    try {
+      localStorage.removeItem('onboarding_state');
+    } catch {}
     setEmail(null);
   };
 

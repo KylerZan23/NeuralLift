@@ -129,8 +129,8 @@ export default function HomePage() {
                 />
               </div>
 
-              <div className="absolute -top-4 -right-4 w-72 h-72 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full blur-3xl -z-10"></div>
-              <div className="absolute -bottom-8 -left-8 w-64 h-64 bg-gradient-to-tr from-accent/20 to-primary/20 rounded-full blur-3xl -z-10"></div>
+              <div className="absolute -top-2 -right-2 w-56 h-56 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full blur-3xl -z-10"></div>
+              <div className="absolute -bottom-4 -left-4 w-48 h-48 bg-gradient-to-tr from-accent/20 to-primary/20 rounded-full blur-3xl -z-10"></div>
             </div>
           </div>
         </div>

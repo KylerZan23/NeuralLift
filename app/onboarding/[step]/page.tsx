@@ -20,7 +20,9 @@ export default function OnboardingStepPage() {
     return {};
   });
 
-  const steps = useMemo(() => {
+  const [steps, setSteps] = useState<ReadonlyArray<any>>([]);
+
+  useEffect(() => {
     const base: Array<any> = [
       { name: 'experience_level', q: 'What is your experience level?', options: ['Beginner', 'Intermediate', 'Advanced'] },
       { name: 'days_per_week', q: 'How many days per week can you train?', options: [2, 3, 4, 5, 6] },
@@ -36,13 +38,11 @@ export default function OnboardingStepPage() {
       base.splice(idx + 1, 0, focusStep);
     }
     base.push({ name: 'notes', q: 'Any preferences or injury limitations? (optional)', type: 'text' });
-    return base as ReadonlyArray<any>;
-  }, [state['days_per_week']]);
+    setSteps(base as ReadonlyArray<any>);
+  }, [state]);
 
   const stepIdx = Math.max(0, Math.min(steps.length - 1, (Number(params.step) || 1) - 1));
   const step = steps[stepIdx] as any;
-
-  // No separate load effect; initial state reads from localStorage synchronously
 
   // Persist on change
   useEffect(() => {
@@ -51,6 +51,7 @@ export default function OnboardingStepPage() {
 
   const totalSteps = steps.length;
   const isValid = useMemo(() => {
+    if (!step) return false;
     const v = state[step.name];
     if (['big3_bench', 'big3_squat', 'big3_deadlift'].includes(step.name)) {
       return typeof v === 'number' && Number.isFinite(v) && v > 0;
@@ -113,7 +114,6 @@ export default function OnboardingStepPage() {
       const payload = {
         programId: crypto.randomUUID(),
         useGPT: true,
-        userId: data.user?.id,
         input: {
           experience_level: exp as any,
           training_frequency_preference: days,
@@ -189,6 +189,10 @@ export default function OnboardingStepPage() {
     if (stepIdx > 0) router.push(`/onboarding/${stepIdx}`);
     else router.push('/');
   };
+
+  if (!step) {
+    return <div className="min-h-screen grid place-items-center">Loading...</div>;
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[oklch(0.985_0.015_240)] via-card to-[oklch(0.985_0.01_240)]">

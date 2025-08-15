@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   let program: Program;
   if (gpt) {
-    program = await generateProgramWithLLM(input, { programId, citations: body.citations ?? [] });
+    program = await generateProgramWithLLM(input, { programId, citations: body.citations ?? [], userId: user.id });
   } else {
     const base: Program = {
       program_id: programId,
