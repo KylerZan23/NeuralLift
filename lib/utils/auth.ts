@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/integrations/supabase';
 
 export async function ensureAuthOrStartOAuth(redirectTo: string): Promise<'proceeded' | 'started_oauth'> {
   const supabase = getSupabaseClient();
