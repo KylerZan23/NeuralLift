@@ -110,3 +110,5 @@ Run migrations in Supabase SQL editor (manual):
 
 ## Storybook
 - `yarn storybook` — components documented with CSF stories.
+
+---
