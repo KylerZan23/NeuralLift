@@ -3,7 +3,7 @@ import PRDashboard from '@/components/PRDashboard';
 import ValidityCard from '@/components/ValidityCard';
 import { useCallback } from 'react';
 import { getSupabaseClient } from '@/lib/integrations/supabase';
-import { fetchLatestProgramIdForUser } from '@/lib/programs';
+import { fetchLatestProgramIdForUser } from '@/lib/core/programs';
 import TopNav from '@/components/TopNav';
 import PRProgressChart from '@/components/PRProgressChart';
 import { Button } from '@/lib/ui/button';

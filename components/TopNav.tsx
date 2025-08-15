@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/integrations/supabase';
-import { fetchLatestProgramIdForUser } from '@/lib/programs';
+import { fetchLatestProgramIdForUser } from '@/lib/core/programs';
 import AuthButton from '@/components/AuthButton';
 
 type Props = {

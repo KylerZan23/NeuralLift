@@ -1,7 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/integrations/supabase';
-import { fetchLatestProgramIdForUser } from '@/lib/programs';
+import {
+  fetchPRsForUser,
+  fetchLatestProgramIdForUser,
+} from '@/lib/core/programs';
+import { PR } from '@/types/program';
+import PRProgressChart from './PRProgressChart';
 import Sparkline from './Sparkline';
 import { Label } from '@/lib/ui/label';
 import { Input } from '@/lib/ui/input';
