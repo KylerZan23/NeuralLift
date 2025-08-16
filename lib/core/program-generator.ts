@@ -74,8 +74,13 @@ async function repairWithModel(raw: string, errors: ErrorObject[]): Promise<stri
         { role: 'user', content: `Fix this program JSON to pass the schema. Only return corrected JSON.\nErrors:\n${JSON.stringify(errors)}\nJSON:\n${raw}` }
       ]
     } as OpenAI.Chat.ChatCompletionCreateParams);
-    const text = response.choices?.[0]?.message?.content;
-    return text ?? null;
+    
+    // Check if it's a non-streaming response
+    if ('choices' in response) {
+      const text = response.choices?.[0]?.message?.content;
+      return text ?? null;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -656,6 +661,12 @@ export async function refineWithGPT(baseProgram: Program, citations: string[]): 
         { role: 'user', content: JSON.stringify(baseProgram) }
       ]
     } as OpenAI.Chat.ChatCompletionCreateParams);
+    
+    // Check if it's a non-streaming response
+    if (!('choices' in response)) {
+      return baseProgram;
+    }
+    
     const text = response.choices?.[0]?.message?.content;
     if (!text) return baseProgram;
     const jsonStart = text.indexOf('{');
@@ -703,6 +714,11 @@ export async function generateProgramWithLLM(
         { role: 'user', content: `User profile:\n${userProfile}\nProgram id: ${programId}\nCitations to include in metadata.source: ${citations.join(', ')}` }
       ]
     } as OpenAI.Chat.ChatCompletionCreateParams);
+
+    // Check if it's a non-streaming response
+    if (!('choices' in response)) {
+      throw new Error('Received streaming response when expecting non-streaming');
+    }
 
     const text = response.choices?.[0]?.message?.content ?? '';
     const jsonStart = text.indexOf('{');
