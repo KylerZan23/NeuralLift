@@ -111,25 +111,34 @@ export function describeBasis(exerciseName: string): { base: BaseLift; ratioRang
 
 export function computeSuggestedWorkingWeightRange(
   exerciseName: string,
-  prs: Big3PRs
+  prs: Big3PRs,
+  experience: ExperienceLevel = 'Intermediate'
 ): { low: number; high: number; perHand: boolean } | null {
   const mapping = findAccessoryMapping(exerciseName);
   if (!mapping) return null;
   const base1RM = mapping.base === 'bench' ? prs.bench : mapping.base === 'squat' ? prs.squat : prs.deadlift;
   if (!base1RM || base1RM <= 0) return null;
 
-  // Main lifts: show 80–85% range of the base 1RM
+  // Main lifts: show 80–85% range of the base 1RM, adjusted for experience
   if (mapping.ratioLow === 1 && mapping.ratioHigh === 1) {
-    const low = roundToIncrement(base1RM * 0.80, 5);
-    const high = roundToIncrement(base1RM * 0.85, 5);
+    // For main lifts, adjust the working percentage based on experience
+    const lowPercent = experience === 'Beginner' ? 0.75 : experience === 'Intermediate' ? 0.80 : 0.82;
+    const highPercent = experience === 'Beginner' ? 0.80 : experience === 'Intermediate' ? 0.85 : 0.87;
+    const low = roundToIncrement(base1RM * lowPercent, 5);
+    const high = roundToIncrement(base1RM * highPercent, 5);
     return { low, high, perHand: /dumbbell|db|\beach\b/i.test(exerciseName) };
   }
 
-  const ratioLow = mapping.ratioLow;
-  const ratioHigh = mapping.ratioHigh;
+  // For accessory exercises, use the experience-adjusted ratio
+  const ratio = pickRatioForExperience(mapping.ratioLow, mapping.ratioHigh, experience);
   const workingPercent = 0.82;
-  const low = roundToIncrement(base1RM * ratioLow * workingPercent, 5);
-  const high = roundToIncrement(base1RM * ratioHigh * workingPercent, 5);
+  
+  // Create a range around the experience-adjusted weight
+  const baseWeight = base1RM * ratio * workingPercent;
+  const rangePercent = experience === 'Beginner' ? 0.10 : experience === 'Intermediate' ? 0.08 : 0.06;
+  const low = roundToIncrement(baseWeight * (1 - rangePercent), 5);
+  const high = roundToIncrement(baseWeight * (1 + rangePercent), 5);
+  
   return { low: Math.min(low, high), high: Math.max(low, high), perHand: /dumbbell|db|\beach\b/i.test(exerciseName) };
 }
 
