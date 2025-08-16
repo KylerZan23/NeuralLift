@@ -361,7 +361,7 @@ function applySessionConstraints(program: Program, input: OnboardingInput): Prog
         // Core placement: exactly two sessions per week include core (Cable Crunch and Hanging Leg Raise)
         const coreDays = pickCoreDayIndices((week.days ?? []).length);
         const coreNames = equipmentCoreExercises(mode);
-        const desiredCoreName = coreDays.includes(di) ? coreNames[coreDays.indexOf(di)] : null;
+        const desiredCoreName = coreDays.includes(di) ? (coreNames[coreDays.indexOf(di)] ?? null) : null;
         exs = enforceCoreForDay(exs, desiredCoreName);
         exs = fillAccessoriesToCount(exs, target, day.focus ?? '');
         // Re-run equipment substitutions for any newly added accessories
@@ -576,7 +576,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       // Align initial week with the same two-core-day policy (equipment-aware)
       const coreDays = pickCoreDayIndices(selected.length);
       const coreNames = equipmentCoreExercises(mode);
-      const desiredCoreName = coreDays.includes(i) ? coreNames[coreDays.indexOf(i)] : null;
+      const desiredCoreName = coreDays.includes(i) ? (coreNames[coreDays.indexOf(i)] ?? null) : null;
       // Enforce calf raise conflict rule
       exs = ensureNoCalfRaiseConflict(exs);
       exs = enforceCoreForDay(exs, desiredCoreName);
