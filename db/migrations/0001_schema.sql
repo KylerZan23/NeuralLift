@@ -24,9 +24,9 @@ create table if not exists public.prs (
 alter table public.programs enable row level security;
 alter table public.prs enable row level security;
 
--- Read policies for authenticated users (broad read for now)
+-- Read policies for authenticated users
 create policy if not exists programs_read on public.programs for select using (true);
-create policy if not exists prs_read on public.prs for select using (true);
+create policy if not exists prs_read on public.prs for select using (auth.uid() = user_id);
 
 -- Write policies (restrict to authenticated; service role bypasses)
 create policy if not exists prs_write on public.prs for insert with check (auth.role() = 'authenticated');

@@ -7,7 +7,7 @@ import { cookies } from 'next/headers';
 
 const BodySchema = z.object({
   programId: z.string().min(1),
-  reason: z.enum(['unlock_full_program', 'regenerate_program']).optional()
+  reason: z.enum(['unlock_full_program', 'regenerate_program'])
 });
 
 export async function POST(req: NextRequest) {
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   if (error || !program) return NextResponse.json({ error: 'Program not found' }, { status: 404 });
   if (program.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const url = await createCheckoutSession({ programId, reason: reason ?? 'unlock_full_program', userId: program.user_id ?? undefined });
+  const url = await createCheckoutSession({ programId, reason, userId: program.user_id ?? undefined });
   return NextResponse.json({ url }, { status: 200 });
 }
 

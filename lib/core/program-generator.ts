@@ -68,6 +68,7 @@ async function repairWithModel(raw: string, errors: ErrorObject[]): Promise<stri
       model: 'gpt-4o',
       temperature: 0.1,
       response_format: { type: 'json_object' },
+      stream: false,
       messages: [
         { role: 'system', content: 'You return strictly valid JSON matching the provided schema. No prose.' },
         { role: 'user', content: `Fix this program JSON to pass the schema. Only return corrected JSON.\nErrors:\n${JSON.stringify(errors)}\nJSON:\n${raw}` }
@@ -648,6 +649,7 @@ export async function refineWithGPT(baseProgram: Program, citations: string[]): 
       model: 'gpt-4o',
       temperature: 0.2,
       response_format: { type: 'json_object' },
+      stream: false,
       messages: [
         { role: 'system', content: 'Return JSON only.' },
         { role: 'user', content: prompt },
@@ -695,6 +697,7 @@ export async function generateProgramWithLLM(
       model: 'gpt-4o',
       temperature: 0.2,
       response_format: { type: 'json_object' },
+      stream: false,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `User profile:\n${userProfile}\nProgram id: ${programId}\nCitations to include in metadata.source: ${citations.join(', ')}` }
@@ -705,23 +708,24 @@ export async function generateProgramWithLLM(
     const jsonStart = text.indexOf('{');
     const jsonEnd = text.lastIndexOf('}');
     if (jsonStart < 0 || jsonEnd <= jsonStart) throw new Error('No JSON in response');
-    const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as Program;
-    let prepared = ensureMetadata(coerceProgramId(parsed, programId));
-    prepared.user_id = opts?.userId;
-    prepared.metadata = {
-      ...prepared.metadata,
-      big3_prs: input.big3_PRs ?? {},
-      experience_level: input.experience_level
-    };
-    prepared = enforceDaysSplit(prepared, input);
-    prepared = applySessionConstraints(prepared, input);
     try {
+      const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as Program;
+      let prepared = ensureMetadata(coerceProgramId(parsed, programId));
+      prepared.user_id = opts?.userId;
+      prepared.metadata = {
+        ...prepared.metadata,
+        big3_prs: input.big3_PRs ?? {},
+        experience_level: input.experience_level
+      };
+      prepared = enforceDaysSplit(prepared, input);
+      prepared = applySessionConstraints(prepared, input);
       return toProgramOrThrow(prepared);
     } catch {
-      const repaired = await repairWithModel(JSON.stringify(prepared), validateProgram.errors ?? []);
+      const repaired = await repairWithModel(JSON.stringify(JSON.parse(text.slice(jsonStart, jsonEnd + 1))), validateProgram.errors ?? []);
       if (repaired) {
         const reparsed = JSON.parse(repaired) as Program;
         let final = ensureMetadata(coerceProgramId(reparsed, programId));
+        final.user_id = opts?.userId;
         final = enforceDaysSplit(final, input);
         final = applySessionConstraints(final, input);
         final.metadata = {
