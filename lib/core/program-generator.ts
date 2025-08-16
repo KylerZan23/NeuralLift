@@ -550,11 +550,11 @@ export function generateDeterministicWeek(input: OnboardingInput) {
 
   const sixDayFocus = input.focus_point ?? 'Arms';
   const sixDay: Day[] = [
-    fiveDay[0], // Push
-    fiveDay[1], // Pull
-    fiveDay[2], // Legs
-    fourDay[0], // Upper 1
-    fourDay[1], // Lower 1
+    fiveDay[0]!, // Push
+    fiveDay[1]!, // Pull
+    fiveDay[2]!, // Legs
+    fourDay[0]!, // Upper 1
+    fourDay[1]!, // Lower 1
     {
       day_number: 6,
       focus: `Focus — ${sixDayFocus}`,
