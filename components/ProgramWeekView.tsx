@@ -106,7 +106,7 @@ export default function ProgramWeekView({ weekNumber, days, prs, experience, sin
   );
 }
 
-function SuggestedWeight({ name, prs, experience, overrides }: { name: string; prs?: Big3PRs | null; experience?: ExperienceLevel; overrides?: Record<string, WeightOverride> }) {
+function SuggestedWeight({ name, prs, experience, overrides }: { name: string; prs?: Big3PRs | null | undefined; experience?: ExperienceLevel | undefined; overrides?: Record<string, WeightOverride> | undefined }) {
   const range = useMemo(() => {
     const o = overrides?.[name];
     if (o === null) return null;
@@ -124,5 +124,3 @@ function SuggestedWeight({ name, prs, experience, overrides }: { name: string; p
     </div>
   );
 }
-
-
