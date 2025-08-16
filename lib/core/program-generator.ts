@@ -350,7 +350,7 @@ function applySessionConstraints(program: Program, input: OnboardingInput): Prog
         // Normalize rests
         let exs: Exercise[] = (day.exercises ?? []).map(e => ({
           ...e,
-          intensity_pct: e.intensity_pct ?? undefined,
+          intensity_pct: e.intensity_pct ?? null,
           rest_seconds: isMainCompound(e.name) ? 180 : Math.max(120, Math.min(180, e.rest_seconds ?? 120))
         } as Exercise));
         // Equipment substitutions first
@@ -584,7 +584,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
     days: selected.map((d, i) => {
       // Start from template then apply constraints: dedupe, single core, fill unique accessories, trim if needed
       const mode = getEquipmentMode(input);
-      let exs: Exercise[] = d.exercises.map(e => ({ ...e, intensity_pct: e.intensity_pct ?? undefined, rest_seconds: isMainCompound(e.name) ? 180 : 120 } as Exercise));
+      let exs: Exercise[] = d.exercises.map(e => ({ ...e, intensity_pct: e.intensity_pct ?? null, rest_seconds: isMainCompound(e.name) ? 180 : 120 } as Exercise));
       // Equipment substitutions before normalization
       exs = exs.map(e => ({ ...e, name: substituteExerciseForEquipment(e.name, mode) }));
       exs = dedupeByNamePreserveOrder(exs, mode);
@@ -619,7 +619,7 @@ export function generateFullProgram(input: OnboardingInput) {
       ...day,
     exercises: day.exercises.map(ex => {
         const sets = Math.max(1, Math.round(ex.sets * volumeMultiplier));
-        const intensity_pct = ex.intensity_pct != null ? Math.max(0.5, Math.min(0.9, (ex.intensity_pct + intensityBump))) : undefined;
+        const intensity_pct = ex.intensity_pct != null ? Math.max(0.5, Math.min(0.9, (ex.intensity_pct + intensityBump))) : null;
       // Ensure rest rules persist across weeks
       const isCompound = /barbell\s+bench\s+press|barbell\s+back\s+squat|standing\s+overhead\s+press|conventional\s+deadlift/i.test(ex.name);
       const rest_seconds = isCompound ? 180 : Math.max(120, Math.min(180, ex.rest_seconds ?? 120));
