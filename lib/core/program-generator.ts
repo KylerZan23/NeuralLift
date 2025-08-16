@@ -68,7 +68,7 @@ async function repairWithModel(raw: string, errors: ErrorObject[]): Promise<stri
       model: 'gpt-4o',
       temperature: 0.1,
       response_format: { type: 'json_object' },
-      stream: false,
+      stream: false, // Ensure this line is added
       messages: [
         { role: 'system', content: 'You return strictly valid JSON matching the provided schema. No prose.' },
         { role: 'user', content: `Fix this program JSON to pass the schema. Only return corrected JSON.\nErrors:\n${JSON.stringify(errors)}\nJSON:\n${raw}` }
@@ -649,7 +649,7 @@ export async function refineWithGPT(baseProgram: Program, citations: string[]): 
       model: 'gpt-4o',
       temperature: 0.2,
       response_format: { type: 'json_object' },
-      stream: false,
+      stream: false, // Ensure this line is added
       messages: [
         { role: 'system', content: 'Return JSON only.' },
         { role: 'user', content: prompt },
@@ -697,7 +697,7 @@ export async function generateProgramWithLLM(
       model: 'gpt-4o',
       temperature: 0.2,
       response_format: { type: 'json_object' },
-      stream: false,
+      stream: false, // Ensure this line is added
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `User profile:\n${userProfile}\nProgram id: ${programId}\nCitations to include in metadata.source: ${citations.join(', ')}` }
