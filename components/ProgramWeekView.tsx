@@ -2,24 +2,7 @@
 import { useMemo } from 'react';
 import { computeSuggestedWorkingWeightRange, type Big3PRs, type ExperienceLevel } from '@/lib/core/weight-prescription';
 import { cn } from '@/lib/utils/utils';
-
-export type Exercise = {
-  id: string;
-  name: string;
-  sets: number;
-  reps: string;
-  rpe: number;
-  tempo: string;
-  rest_seconds: number;
-  intensity_pct?: number;
-};
-
-export type Day = {
-  day_number: number;
-  focus: string;
-  exercises: Exercise[];
-  notes?: string;
-};
+import type { Day } from '@/types/program';
 
 type WeightOverride = { low: number; high: number; perHand?: boolean } | null;
 
