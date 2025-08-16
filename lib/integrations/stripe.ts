@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { getEnv } from '@/lib/env';
+import { getEnv } from '@/lib/utils/env';
 
 const env = getEnv();
 export const stripe = new Stripe(env.STRIPE_SECRET, { apiVersion: '2024-06-20' });
