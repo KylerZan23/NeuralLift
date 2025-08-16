@@ -601,7 +601,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       exs = dedupeByNamePreserveOrder(exs, mode);
       exs = ensureNoCalfRaiseConflict(exs);
       exs = trimRespectingCoreAndCompound(exs, desiredCount);
-      return { day_number: i + 1, focus: d.focus, exercises: exs, notes: d.notes };
+      return { day_number: i + 1, focus: d.focus, exercises: exs, notes: d.notes ?? null };
     })
   };
 }
@@ -616,14 +616,16 @@ export function generateFullProgram(input: OnboardingInput) {
     const intensityBump = cyclePos === 4 ? -0.05 : 0.01 * (w - 1); // slight upward trend, deload down
 
     const adjustedDays = baseWeek.days.map(day => ({
-      ...day,
-    exercises: day.exercises.map(ex => {
+      day_number: day.day_number,
+      focus: day.focus,
+      notes: day.notes ?? null,
+      exercises: day.exercises.map(ex => {
         const sets = Math.max(1, Math.round(ex.sets * volumeMultiplier));
         const intensity_pct = ex.intensity_pct != null ? Math.max(0.5, Math.min(0.9, (ex.intensity_pct + intensityBump))) : null;
-      // Ensure rest rules persist across weeks
-      const isCompound = /barbell\s+bench\s+press|barbell\s+back\s+squat|standing\s+overhead\s+press|conventional\s+deadlift/i.test(ex.name);
-      const rest_seconds = isCompound ? 180 : Math.max(120, Math.min(180, ex.rest_seconds ?? 120));
-      return { ...ex, sets, intensity_pct, rest_seconds };
+        // Ensure rest rules persist across weeks
+        const isCompound = /barbell\s+bench\s+press|barbell\s+back\s+squat|standing\s+overhead\s+press|conventional\s+deadlift/i.test(ex.name);
+        const rest_seconds = isCompound ? 180 : Math.max(120, Math.min(180, ex.rest_seconds ?? 120));
+        return { ...ex, sets, intensity_pct, rest_seconds };
       })
     }));
 
@@ -708,12 +710,12 @@ export async function generateProgramWithLLM(
     const weeks = generateFullProgram(input);
     const fallback: Program = {
       program_id: programId,
-      user_id: opts?.userId,
       name: '12-week Hypertrophy Program',
       paid: false,
       weeks,
       metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {}, big3_prs: input.big3_PRs ?? {}, experience_level: input.experience_level }
     } as Program;
+    if (opts?.userId) fallback.user_id = opts.userId;
     return fallback;
   }
   try {
@@ -745,7 +747,7 @@ export async function generateProgramWithLLM(
     try {
       const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as Program;
       let prepared = ensureMetadata(coerceProgramId(parsed, programId));
-      prepared.user_id = opts?.userId;
+      if (opts?.userId) prepared.user_id = opts.userId;
       prepared.metadata = {
         ...prepared.metadata,
         big3_prs: input.big3_PRs ?? {},
@@ -759,7 +761,7 @@ export async function generateProgramWithLLM(
       if (repaired) {
         const reparsed = JSON.parse(repaired) as Program;
         let final = ensureMetadata(coerceProgramId(reparsed, programId));
-        final.user_id = opts?.userId;
+        if (opts?.userId) final.user_id = opts.userId;
         final = enforceDaysSplit(final, input);
         final = applySessionConstraints(final, input);
         final.metadata = {
@@ -775,12 +777,12 @@ export async function generateProgramWithLLM(
     const weeks = generateFullProgram(input);
     const fallback: Program = {
       program_id: programId,
-      user_id: opts?.userId,
       name: '12-week Hypertrophy Program',
       paid: false,
       weeks,
       metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {}, big3_prs: input.big3_PRs ?? {}, experience_level: input.experience_level }
     } as Program;
+    if (opts?.userId) fallback.user_id = opts.userId;
     return fallback;
   }
 }

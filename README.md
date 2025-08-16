@@ -103,6 +103,16 @@ Run migrations in Supabase SQL editor (manual):
 - LLM-first generation: set `OPENAI_API_KEY` to enable; server validates model output against `types/program.schema.json` and attempts a single repair; falls back to deterministic generator on failure.
 - Program schema is validated with AJV against `types/program.schema.json` before saving.
 
+### TypeScript & Build Configuration
+- **Strict Type Safety**: Project uses `exactOptionalPropertyTypes: true` in TypeScript config for enhanced type safety
+- **Build Compatibility**: All optional properties must be handled without explicit `undefined` assignments
+- **Fixed Issues**: Resolved Vercel build errors related to:
+  - Optional `notes` property in Day objects (`program-generator.ts`)
+  - Optional `user_id` assignments in Program objects
+  - Supabase auth subscription cleanup patterns (`auth.ts`)
+  - OAuth options parameter handling
+- See `docs/implementation/TYPESCRIPT_BUILD_ERROR_FIX.md` for detailed fix documentation
+
 ## Testing
 - `yarn test` — unit tests for onboarding, gating, a11y.
 - Consider adding Playwright E2E for full flow.

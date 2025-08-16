@@ -72,7 +72,7 @@ export async function ensureAuthOrStartOAuth(redirectTo: string): Promise<'proce
 
         // Safety: clean up when promise settles
         const finalize = (value: 'proceeded' | 'started_oauth') => {
-          sub?.data?.subscription?.unsubscribe?.();
+          sub?.subscription?.unsubscribe?.();
           try { popup?.close(); } catch {}
           return value;
         };
@@ -86,7 +86,7 @@ export async function ensureAuthOrStartOAuth(redirectTo: string): Promise<'proce
   } catch {}
 
   // Fallback to full-page redirect if popup could not be opened
-  await supabase.auth.signInWithOAuth({ provider: 'google', options: base ? { redirectTo: `${base}${redirectTo}` } : undefined });
+  await supabase.auth.signInWithOAuth(base ? { provider: 'google', options: { redirectTo: `${base}${redirectTo}` } } : { provider: 'google' });
   return 'started_oauth';
 }
 
