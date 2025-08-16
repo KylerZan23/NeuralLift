@@ -119,3 +119,4 @@ settings.local.*
 *.tmp
 /.local/
 /local/
+.vercel
