@@ -316,7 +316,10 @@ function trimRespectingCoreAndCompound(exs: Exercise[], desiredCount: number): E
   if (mainCompoundIndex >= 0) keepSet.add(mainCompoundIndex);
   const out: Exercise[] = [];
   for (let i = 0; i < exs.length; i++) {
-    out.push(exs[i]);
+    const exercise = exs[i];
+    if (exercise) { // Check if the exercise exists
+      out.push(exercise);
+    }
   }
   // remove from end while respecting keepSet
   while (out.length > desiredCount) {
