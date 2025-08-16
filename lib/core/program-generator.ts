@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import Ajv, { type ErrorObject, type Schema } from 'ajv';
-import addFormats from 'aj-formats';
+import addFormats from 'ajv-formats';
 import programSchema from '@/types/program.schema.json';
 import type { Program, Day } from '@/types/program';
 import type { ChatCompletionCreateParams } from 'openai/resources/chat';

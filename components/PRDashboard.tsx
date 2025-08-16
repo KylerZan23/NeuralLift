@@ -11,8 +11,10 @@ import Sparkline from './Sparkline';
 import { Label } from '@/lib/ui/label';
 import { Input } from '@/lib/ui/input';
 import { Button } from '@/lib/ui/button';
+import { useOnboardingStore } from '@/lib/state/onboarding-store';
 
 export default function PRDashboard() {
+  const { pendingPRs, clearPendingPRs } = useOnboardingStore();
   const [bench, setBench] = useState<number | ''>('');
   const [squat, setSquat] = useState<number | ''>('');
   const [deadlift, setDeadlift] = useState<number | ''>('');
@@ -31,15 +33,10 @@ export default function PRDashboard() {
       try {
         const uid = (await supabase.auth.getUser()).data.user?.id;
         if (!uid) {
-          try {
-            const raw = localStorage.getItem('pending_prs');
-            if (raw) {
-              const pending = JSON.parse(raw);
-              setBench(pending.bench ?? '');
-              setSquat(pending.squat ?? '');
-              setDeadlift(pending.deadlift ?? '');
-            }
-          } catch {}
+          // Load from Zustand store if user is not authenticated
+          if (pendingPRs.bench) setBench(pendingPRs.bench);
+          if (pendingPRs.squat) setSquat(pendingPRs.squat);
+          if (pendingPRs.deadlift) setDeadlift(pendingPRs.deadlift);
           return;
         }
         // Load latest program id for user to support regenerate flow
@@ -53,7 +50,7 @@ export default function PRDashboard() {
         }
       } catch {}
     })();
-  }, []);
+  }, [pendingPRs]);
 
   const onSave = async () => {
     if (!userId) return;
@@ -81,7 +78,7 @@ export default function PRDashboard() {
       if (improved('bench') || improved('squat') || improved('deadlift')) {
         setShowUpsell(true);
       }
-      try { localStorage.removeItem('pending_prs'); } catch {}
+      clearPendingPRs();
     } catch {
       // no-op UI for now
     } finally {

@@ -7,8 +7,9 @@
  import GatingModal from '@/components/GatingModal';
  import TopNav from '@/components/TopNav';
  import { Button } from '@/lib/ui/button';
- import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/lib/ui/tabs';
- import type { Program as ProgramType } from '@/types/program';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/lib/ui/tabs';
+import type { Program as ProgramType } from '@/types/program';
+import { useOnboardingStore } from '@/lib/state/onboarding-store';
 
  type Program = ProgramType;
 
@@ -24,6 +25,7 @@
  }
 
 export default function ProgramPage() {
+  const { pendingPRs } = useOnboardingStore();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [program, setProgram] = useState<Program | null>(null);
@@ -68,14 +70,17 @@ export default function ProgramPage() {
     })();
   }, []);
   
-  // Fallback: if no PRs in supabase, check pending_prs in localStorage
+  // Fallback: if no PRs in supabase, check pendingPRs in Zustand store
   useEffect(() => {
     if (prs && (prs.bench || prs.squat || prs.deadlift)) return;
-    try {
-      const raw = localStorage.getItem('pending_prs');
-      if (raw) setPrs(JSON.parse(raw) as Big3PRs);
-    } catch {}
-  }, [prs]);
+    if (pendingPRs.bench || pendingPRs.squat || pendingPRs.deadlift) {
+      setPrs({
+        bench: pendingPRs.bench ?? null,
+        squat: pendingPRs.squat ?? null,
+        deadlift: pendingPRs.deadlift ?? null
+      });
+    }
+  }, [prs, pendingPRs]);
 
   // Post-payment toast & cleanup of query param
   useEffect(() => {

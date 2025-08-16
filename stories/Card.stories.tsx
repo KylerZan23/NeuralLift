@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import Card from '../components/Card';
+import { Card } from '@/lib/ui/card';
 
-const meta: Meta<typeof Card> = { title: 'Components/Card', component: Card, parameters: { layout: 'padded' }, tags: ['autodocs'] };
+const meta: Meta<typeof Card> = { title: 'UI/Card', component: Card, parameters: { layout: 'padded' }, tags: ['autodocs'] };
 export default meta;
 type Story = StoryObj<typeof Card>;
 

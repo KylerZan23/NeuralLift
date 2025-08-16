@@ -5,6 +5,7 @@ import { getSupabaseClient } from '@/lib/integrations/supabase';
 import type { Program as ProgramType } from '@/types/program';
 import LoadingGeneration from '@/components/LoadingGeneration';
 import OnboardingQuestion from '@/components/OnboardingQuestion';
+import { useOnboardingStore } from '@/lib/state/onboarding-store';
 
 type OnboardingStep = {
   name: string;
@@ -16,6 +17,7 @@ type OnboardingStep = {
 export default function OnboardingStepPage() {
   const router = useRouter();
   const params = useParams<{ step: string }>();
+  const { setPendingPR } = useOnboardingStore();
 
   const [state, setState] = useState<Record<string, string | number>>(() => {
     try {
@@ -141,35 +143,32 @@ export default function OnboardingStepPage() {
       setSubmitting(true);
       setShowLoader(true);
       // Save PRs entered during onboarding so the dashboard is prefilled
+      const benchPR = Number(state['big3_bench']);
+      const squatPR = Number(state['big3_squat']);
+      const deadliftPR = Number(state['big3_deadlift']);
+      
       try {
         if (data.user?.id) {
           const res = await fetch('/api/pr/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              bench: Number(state['big3_bench']),
-              squat: Number(state['big3_squat']),
-              deadlift: Number(state['big3_deadlift'])
+              bench: benchPR,
+              squat: squatPR,
+              deadlift: deadliftPR
             })
           });
           if (!res.ok) {
-            try {
-              localStorage.setItem('pending_prs', JSON.stringify({
-                bench: Number(state['big3_bench']),
-                squat: Number(state['big3_squat']),
-                deadlift: Number(state['big3_deadlift'])
-              }));
-            } catch {}
+            // If API call fails, store in Zustand for later use
+            if (benchPR > 0) setPendingPR('bench', benchPR);
+            if (squatPR > 0) setPendingPR('squat', squatPR);
+            if (deadliftPR > 0) setPendingPR('deadlift', deadliftPR);
           }
         } else {
-          // Persist locally so dashboard can prefill before sign-in
-          try {
-            localStorage.setItem('pending_prs', JSON.stringify({
-              bench: Number(state['big3_bench']),
-              squat: Number(state['big3_squat']),
-              deadlift: Number(state['big3_deadlift'])
-            }));
-          } catch {}
+          // User not authenticated - store in Zustand for dashboard prefill
+          if (benchPR > 0) setPendingPR('bench', benchPR);
+          if (squatPR > 0) setPendingPR('squat', squatPR);
+          if (deadliftPR > 0) setPendingPR('deadlift', deadliftPR);
         }
       } catch {}
       const { data: sessionData } = await supabase.auth.getSession();
