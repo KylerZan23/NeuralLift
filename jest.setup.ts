@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { toHaveNoViolations } from 'jest-axe';
 import 'whatwg-fetch';
-expect.extend(toHaveNoViolations);
+expect.extend({ toHaveNoViolations });
 
 // Polyfill for Next.js API routes testing
 import { TextEncoder, TextDecoder } from 'util';
