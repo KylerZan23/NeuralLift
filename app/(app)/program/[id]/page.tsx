@@ -143,7 +143,7 @@ export default function ProgramPage() {
                       <ProgramWeekView
                         weekNumber={w}
                         days={program?.weeks?.find(week => week.week_number === w)?.days ?? []}
-                        prs={prs ?? undefined}
+                        prs={prs}
                         experience={experience}
                         singleColumn
                         twoColumnExercises

@@ -6,7 +6,7 @@ import type { Day } from '@/types/program';
 
 type WeightOverride = { low: number; high: number; perHand?: boolean } | null;
 
-export default function ProgramWeekView({ weekNumber, days, prs, experience, singleColumn, twoColumnExercises = false, suggestedWeightOverrides }: { weekNumber: number; days: Day[]; prs?: Big3PRs; experience?: ExperienceLevel; singleColumn?: boolean; twoColumnExercises?: boolean; exerciseSplitLeftCount?: number; suggestedWeightOverrides?: Record<string, WeightOverride> }) {
+export default function ProgramWeekView({ weekNumber, days, prs, experience, singleColumn, twoColumnExercises = false, suggestedWeightOverrides }: { weekNumber: number; days: Day[]; prs?: Big3PRs | null; experience?: ExperienceLevel; singleColumn?: boolean; twoColumnExercises?: boolean; exerciseSplitLeftCount?: number; suggestedWeightOverrides?: Record<string, WeightOverride> }) {
   return (
     <section aria-label={`Week ${weekNumber}`} className="rounded-2xl bg-white/80 backdrop-blur-md p-4 shadow-xl">
       <h3 className="text-xl font-bold text-gray-900">Week {weekNumber}</h3>
