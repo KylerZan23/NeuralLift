@@ -391,6 +391,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
 
   const twoDay: Day[] = [
     {
+      day_number: 1,
       focus: 'Full Body A',
       exercises: [
         { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '5-8', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound, intensity_pct: sqPct },
@@ -401,6 +402,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       ]
     },
     {
+      day_number: 2,
       focus: 'Full Body B',
       exercises: [
         { id: 'dl-01', name: 'Conventional Deadlift', sets: 3, reps: '4-6', rpe: 7, tempo: '2-0-1', rest_seconds: 180, intensity_pct: dlPct },
@@ -414,6 +416,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
 
   const threeDay: Day[] = [
     {
+      day_number: 1,
       focus: 'Upper',
       exercises: [
         { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound, intensity_pct: bpPct },
@@ -425,6 +428,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       ]
     },
     {
+      day_number: 2,
       focus: 'Lower',
       exercises: [
         { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '6-8', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound, intensity_pct: sqPct },
@@ -435,6 +439,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       ]
     },
     {
+      day_number: 3,
       focus: 'Full body',
       exercises: [
         { id: 'dl-01', name: 'Conventional Deadlift', sets: 3, reps: '4-6', rpe: 7, tempo: '2-0-1', rest_seconds: 180, intensity_pct: dlPct },
@@ -448,6 +453,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
 
   const fourDay: Day[] = [
     {
+      day_number: 1,
       focus: 'Upper 1',
       exercises: [
         { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound, intensity_pct: bpPct },
@@ -457,6 +463,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       ]
     },
     {
+      day_number: 2,
       focus: 'Lower 1',
       exercises: [
         { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '6-8', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound, intensity_pct: sqPct },
@@ -466,6 +473,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       ]
     },
     {
+      day_number: 3,
       focus: 'Upper 2',
       exercises: [
         { id: 'ohp-02', name: 'Standing Overhead Press', sets: 4, reps: '6-8', rpe: 8, tempo: '2-0-1', rest_seconds: restCompound },
@@ -475,6 +483,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       ]
     },
     {
+      day_number: 4,
       focus: 'Lower 2',
       exercises: [
         { id: 'dl-01', name: 'Conventional Deadlift', sets: 3, reps: '4-6', rpe: 7, tempo: '2-0-1', rest_seconds: 180, intensity_pct: dlPct },
@@ -487,6 +496,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
 
   const fiveDay: Day[] = [
     {
+      day_number: 1,
       focus: 'Push',
       exercises: [
         { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound, intensity_pct: bpPct },
@@ -497,6 +507,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       ]
     },
     {
+      day_number: 2,
       focus: 'Pull',
       exercises: [
         { id: 'row-01', name: 'Chest-Supported Row', sets: 4, reps: '6-10', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound },
@@ -506,6 +517,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       ]
     },
     {
+      day_number: 3,
       focus: 'Legs',
       exercises: [
         { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '6-8', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound, intensity_pct: sqPct },
@@ -515,6 +527,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       ]
     },
     {
+      day_number: 4,
       focus: 'Upper',
       exercises: [
         { id: 'bp-02', name: 'Close-Grip Bench Press', sets: 3, reps: '6-8', rpe: 7, tempo: '2-0-1', rest_seconds: restCompound, intensity_pct: Math.max(0.68, bpPct - 0.03) },
@@ -524,6 +537,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       ]
     },
     {
+      day_number: 5,
       focus: 'Lower',
       exercises: [
         { id: 'dl-01', name: 'Conventional Deadlift', sets: 3, reps: '4-6', rpe: 7, tempo: '2-0-1', rest_seconds: 180, intensity_pct: dlPct },
@@ -542,6 +556,7 @@ export function generateDeterministicWeek(input: OnboardingInput) {
     fourDay[0], // Upper 1
     fourDay[1], // Lower 1
     {
+      day_number: 6,
       focus: `Focus — ${sixDayFocus}`,
       exercises: [
         { id: 'row-02', name: 'Chest-Supported Row', sets: 3, reps: '8-12', rpe: 8, tempo: '2-0-1', rest_seconds: restAccessory },
