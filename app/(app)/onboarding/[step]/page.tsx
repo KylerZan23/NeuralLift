@@ -224,7 +224,7 @@ export default function OnboardingStepPage() {
                 question={step.q}
                 description="Answer honestly for the best plan."
                 name={step.name}
-                type={step.type}
+                type={step.type ?? 'select'}
                 options={Array.isArray(step.options) ? step.options.map(o => ({ label: String(o), value: o })) : []}
                 value={state[step.name]}
                 onChange={(v) => setState(prev => ({ ...prev, [step.name]: v }))}
