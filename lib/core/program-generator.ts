@@ -3,7 +3,7 @@ import Ajv, { type ErrorObject, type Schema } from 'ajv';
 import addFormats from 'ajv-formats';
 import programSchema from '@/types/program.schema.json';
 import type { Program, Day } from '@/types/program';
-import type { ChatCompletionCreateParams } from 'openai/resources/chat';
+import type { ChatCompletionCreateParams } from 'openai';
 
 export const OnboardingInput = z.object({
   id: z.string().optional(),
