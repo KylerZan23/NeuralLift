@@ -171,9 +171,11 @@ export default function OnboardingStepPage() {
           if (deadliftPR > 0) setPendingPR('deadlift', deadliftPR);
         }
       } catch {}
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      fetch('/api/generate-program', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify(payload) })
+      fetch('/api/generate-program', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
         .then(async (r) => {
           const body = await r.json().catch(() => null);
           if (!r.ok || !isProgram(body)) throw new Error('Program generation failed');
