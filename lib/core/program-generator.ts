@@ -3,7 +3,7 @@ import Ajv, { type ErrorObject, type Schema } from 'ajv';
 import addFormats from 'ajv-formats';
 import programSchema from '@/types/program.schema.json';
 import type { Program, Day } from '@/types/program';
-import type { ChatCompletionCreateParams } from 'openai';
+import OpenAI from 'openai';
 
 export const OnboardingInput = z.object({
   id: z.string().optional(),
@@ -72,7 +72,7 @@ async function repairWithModel(raw: string, errors: ErrorObject[]): Promise<stri
         { role: 'system', content: 'You return strictly valid JSON matching the provided schema. No prose.' },
         { role: 'user', content: `Fix this program JSON to pass the schema. Only return corrected JSON.\nErrors:\n${JSON.stringify(errors)}\nJSON:\n${raw}` }
       ]
-    } as ChatCompletionCreateParams);
+    } as OpenAI.Chat.ChatCompletionCreateParams);
     const text = response.choices?.[0]?.message?.content;
     return text ?? null;
   } catch {
@@ -653,7 +653,7 @@ export async function refineWithGPT(baseProgram: Program, citations: string[]): 
         { role: 'user', content: prompt },
         { role: 'user', content: JSON.stringify(baseProgram) }
       ]
-    } as ChatCompletionCreateParams);
+    } as OpenAI.Chat.ChatCompletionCreateParams);
     const text = response.choices?.[0]?.message?.content;
     if (!text) return baseProgram;
     const jsonStart = text.indexOf('{');
@@ -699,7 +699,7 @@ export async function generateProgramWithLLM(
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `User profile:\n${userProfile}\nProgram id: ${programId}\nCitations to include in metadata.source: ${citations.join(', ')}` }
       ]
-    } as ChatCompletionCreateParams);
+    } as OpenAI.Chat.ChatCompletionCreateParams);
 
     const text = response.choices?.[0]?.message?.content ?? '';
     const jsonStart = text.indexOf('{');
