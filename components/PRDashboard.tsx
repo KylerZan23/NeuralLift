@@ -22,7 +22,11 @@ export default function PRDashboard() {
 
   useEffect(() => {
     const supabase = getSupabaseClient();
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUserId(data.user?.id ?? null);
+    };
+    getUser();
     // Load current PRs, or pending PRs if user is not signed in
     (async () => {
       try {

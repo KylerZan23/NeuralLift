@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 let cachedClient: SupabaseClient | null = null;
 
@@ -9,7 +10,7 @@ export function getSupabaseClient(): SupabaseClient {
   if (!url || !anon) {
     throw new Error('Supabase env vars missing: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
   }
-  cachedClient = createClient(url, anon);
+  cachedClient = createBrowserClient(url, anon);
   return cachedClient;
 }
 

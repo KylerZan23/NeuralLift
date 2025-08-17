@@ -113,6 +113,17 @@ Run migrations in Supabase SQL editor (manual):
   - OAuth options parameter handling
 - See `docs/implementation/TYPESCRIPT_BUILD_ERROR_FIX.md` for detailed fix documentation
 
+### Authentication & Session Management
+- **SSR Compatibility**: Uses `@supabase/ssr` with `createBrowserClient` for proper cookie-based session management
+- **Production Fix**: Resolved critical issue where users couldn't generate programs due to session sync problems
+- **Browser/Server Sync**: Authentication state properly synchronized between client and server via cookies
+- **API Security**: Server routes use `createServerClient` with cookie handlers for session verification
+- **Fixed Issues**: Resolved production authentication failures where:
+  - Users sign in successfully in browser but API returns 401 Unauthorized
+  - Session cookies not properly set for server-side verification
+  - Client-side auth state not synchronized with server
+- See `docs/implementation/SUPABASE_SSR_AUTH_FIX.md` for implementation details
+
 ## Testing
 - `yarn test` — unit tests for onboarding, gating, a11y.
 - Consider adding Playwright E2E for full flow.

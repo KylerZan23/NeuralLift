@@ -15,7 +15,11 @@ export default function HomePage() {
   const [email, setEmail] = useState<string | null>(null);
   useEffect(() => {
     const supabase = getSupabaseClient();
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setEmail(data.user?.email ?? null);
+    };
+    getUser();
   }, []);
   const gotoOnboarding = useCallback(async () => {
     const result = await ensureAuthOrStartOAuth('/onboarding/1');

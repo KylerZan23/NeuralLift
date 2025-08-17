@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/lib/integrations/supabase';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { ensureAuthOrStartOAuth } from '@/lib/utils/auth';
 import { Button } from '@/lib/ui/button';
 
@@ -9,9 +10,13 @@ export default function AuthButton() {
 
   useEffect(() => {
     const supabase = getSupabaseClient();
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setEmail(data.user?.email ?? null);
+    };
+    getUser();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (event === 'SIGNED_IN') {
         try {
           localStorage.removeItem('onboarding_state');
