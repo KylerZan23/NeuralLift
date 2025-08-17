@@ -96,42 +96,74 @@ export async function POST(req: NextRequest) {
   console.log('✅ [generate-program] Authentication successful, proceeding with generation');
 
   const user = session.user;
+  console.log('🤖 [generate-program] Starting program generation:', {
+    useGPT: gpt,
+    userId: user.id,
+    programId,
+  });
+
   let program: Program;
-  if (gpt) {
-    program = await generateProgramWithLLM(input, { programId, citations: body.citations ?? [], userId: user.id });
-  } else {
-    const base: Program = {
-      program_id: programId,
-      name: '12-week Hypertrophy Program',
-      paid: false,
-      weeks: generateFullProgram(input),
-      metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {} }
-    };
-    program = base;
+  try {
+    if (gpt) {
+      console.log('🧠 [generate-program] Using LLM for generation');
+      program = await generateProgramWithLLM(input, { programId, citations: body.citations ?? [], userId: user.id });
+      console.log('✅ [generate-program] LLM generation completed');
+    } else {
+      console.log('📊 [generate-program] Using deterministic generation');
+      const base: Program = {
+        program_id: programId,
+        name: '12-week Hypertrophy Program',
+        paid: false,
+        weeks: generateFullProgram(input),
+        metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {} }
+      };
+      program = base;
+      console.log('✅ [generate-program] Deterministic generation completed');
+    }
+  } catch (error) {
+    console.error('❌ [generate-program] Program generation failed:', error);
+    return NextResponse.json({ error: 'Program generation failed', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
+  console.log('🔍 [generate-program] Validating program schema');
   // Validate program against JSON schema before saving
   const valid = validateProgram(program);
   if (!valid) {
+    console.error('❌ [generate-program] Schema validation failed:', validateProgram.errors);
     return NextResponse.json({ error: 'Invalid program payload', details: validateProgram.errors }, { status: 400 });
   }
+  console.log('✅ [generate-program] Schema validation passed');
 
   // Simple in-memory rate limit per IP per minute (best-effort; for production use Upstash Redis)
+  console.log('🚦 [generate-program] Checking rate limits');
   try {
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';
     const key = `gen:${ip}:${new Date().getUTCMinutes()}`;
     RateLimitSchema.parse({ ip, key });
     const { isAllowedAndConsume } = await import('@/lib/utils/rate-limit');
     const ok = await isAllowedAndConsume({ key, limit: 5, windowSeconds: 60 });
-    if (!ok) return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
-  } catch {}
-  const serviceSupabase = getServiceSupabaseClient();
+    if (!ok) {
+      console.error('❌ [generate-program] Rate limit exceeded');
+      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+    }
+    console.log('✅ [generate-program] Rate limit check passed');
+  } catch (rateLimitError) {
+    console.error('⚠️ [generate-program] Rate limit check failed, continuing:', rateLimitError);
+  }
+
   console.log('💾 [generate-program] Saving program to database:', {
     programId: program.program_id,
     userId: user.id,
     programName: program.name,
   });
   
-  await serviceSupabase.from('programs').upsert({ id: program.program_id, user_id: user.id, name: program.name, data: program, paid: program.paid ?? false });
+  try {
+    const serviceSupabase = getServiceSupabaseClient();
+    await serviceSupabase.from('programs').upsert({ id: program.program_id, user_id: user.id, name: program.name, data: program, paid: program.paid ?? false });
+    console.log('✅ [generate-program] Database save successful');
+  } catch (dbError) {
+    console.error('❌ [generate-program] Database save failed:', dbError);
+    return NextResponse.json({ error: 'Database save failed', details: dbError instanceof Error ? dbError.message : 'Unknown error' }, { status: 500 });
+  }
   
   console.log('🎉 [generate-program] Program generation completed successfully');
   return NextResponse.json(program, { status: 201 });
