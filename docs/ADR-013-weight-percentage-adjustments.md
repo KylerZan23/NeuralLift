@@ -4,14 +4,14 @@
 Accepted
 
 ## Context
-User feedback indicated that certain dumbbell exercises were prescribing weights that were too heavy, resulting in poor form and potentially unsafe training conditions. The weight prescription system uses percentage ratios of Big-3 PRs to calculate suggested working weights for accessory exercises.
+User feedback indicated that certain dumbbell exercises were prescribing weights that were too heavy, resulting in poor form and potentially unsafe training conditions. After initial adjustments, additional feedback requested further reductions for Seated Dumbbell Shoulder Press and Incline Dumbbell Press. The weight prescription system uses percentage ratios of Big-3 PRs to calculate suggested working weights for accessory exercises.
 
 ## Decision
 We will lower the percentage ratios for the following dumbbell exercises based on user feedback severity:
 
 ### Changes Made
-- **Seated Dumbbell Shoulder Press**: 40-50% → 32-42% (20% reduction)
-- **Incline Dumbbell Press**: 45-55% → 37-47% (17% reduction)  
+- **Seated Dumbbell Shoulder Press**: 40-50% → 25-35% (37% total reduction, applied in two phases)
+- **Incline Dumbbell Press**: 45-55% → 30-40% (33% total reduction, applied in two phases)
 - **Dumbbell Bench Press**: 75-85% → 65-75% (13% reduction)
 - **Incline Dumbbell Curl**: 15-25% → 12-20% (20% reduction)
 

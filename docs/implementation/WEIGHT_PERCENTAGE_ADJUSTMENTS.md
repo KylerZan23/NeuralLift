@@ -7,21 +7,23 @@ Adjusting weight prescription percentages for specific dumbbell exercises that w
 
 | Exercise | Current Low-High | New Low-High | Reduction | Severity |
 |----------|------------------|--------------|-----------|----------|
-| Seated Dumbbell Shoulder Press | 40-50% | 32-42% | ~20% | Way too heavy |
-| Incline Dumbbell Press | 45-55% | 37-47% | ~17% | Way too heavy |
+| Seated Dumbbell Shoulder Press | 40-50% | 25-35% | ~37% | Way too heavy |
+| Incline Dumbbell Press | 45-55% | 30-40% | ~33% | Way too heavy |
 | Dumbbell Bench Press | 75-85% | 65-75% | ~13% | Too heavy |
 | Incline Dumbbell Curl | 15-25% | 12-20% | ~20% | Slightly too heavy |
 
 ## Rationale
 
-### Seated Dumbbell Shoulder Press (40-50% → 32-42%)
-- Most significant reduction due to "way too heavy" feedback
+### Seated Dumbbell Shoulder Press (40-50% → 25-35%)
+- Most significant reduction due to "way too heavy" feedback requiring additional adjustment
 - Shoulder press requires more stabilization with dumbbells vs barbell
-- New range better reflects realistic dumbbell shoulder press capability
+- Second reduction applied after user feedback that initial adjustment insufficient
+- New range reflects realistic dumbbell shoulder press capability with safety margin
 
-### Incline Dumbbell Press (45-55% → 37-47%)
-- Substantial reduction for "way too heavy" feedback
+### Incline Dumbbell Press (45-55% → 30-40%)
+- Substantial reduction for "way too heavy" feedback requiring additional adjustment  
 - Incline angle and dumbbell stability make this more challenging than flat
+- Second reduction applied after user feedback that initial adjustment insufficient
 - Brings it more in line with other dumbbell pressing movements
 
 ### Dumbbell Bench Press (75-85% → 65-75%)

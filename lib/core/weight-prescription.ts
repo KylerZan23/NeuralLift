@@ -23,9 +23,9 @@ const ACCESSORY_MAPPINGS: AccessoryMap[] = [
 
   // Presses
   { pattern: /\b(barbell\s+)?overhead\s+press\b|^standing\s+overhead\s+press$/i, base: 'bench', ratioLow: 0.55, ratioHigh: 0.65 },
-  { pattern: /dumbbell.*(overhead|shoulder)\s+press/i, base: 'bench', ratioLow: 0.32, ratioHigh: 0.42 },
+  { pattern: /dumbbell.*(overhead|shoulder)\s+press/i, base: 'bench', ratioLow: 0.25, ratioHigh: 0.35 },
   { pattern: /incline\s+barbell\s+(press|bench)/i, base: 'bench', ratioLow: 0.65, ratioHigh: 0.75 },
-  { pattern: /incline\s+dumbbell\s+(press|bench)/i, base: 'bench', ratioLow: 0.37, ratioHigh: 0.47 },
+  { pattern: /incline\s+dumbbell\s+(press|bench)/i, base: 'bench', ratioLow: 0.30, ratioHigh: 0.40 },
   { pattern: /dumbbell\s+bench/i, base: 'bench', ratioLow: 0.65, ratioHigh: 0.75 },
   { pattern: /close[- ]?grip\s+bench/i, base: 'bench', ratioLow: 0.80, ratioHigh: 0.90 },
   { pattern: /\bdips?\b/i, base: 'bench', ratioLow: 0.50, ratioHigh: 0.60 },
