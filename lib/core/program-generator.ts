@@ -377,14 +377,8 @@ function applySessionConstraints(program: Program, input: OnboardingInput): Prog
 }
 
 export function generateDeterministicWeek(input: OnboardingInput) {
-  const exp = input.experience_level;
-  const basePct = exp === 'Beginner' ? 0.65 : exp === 'Intermediate' ? 0.72 : 0.75;
   const restCompound = 180; // 3 minutes for all exercises
   const restAccessory = 180; // 3 minutes for all exercises
-
-  const bpPct = Math.min(0.8, basePct);
-  const sqPct = Math.min(0.78, basePct);
-  const dlPct = Math.min(0.8, basePct);
 
   const twoDay: Day[] = [
     {
@@ -610,7 +604,6 @@ export function generateFullProgram(input: OnboardingInput) {
     // Progression: 3-week accumulation, 1-week deload cycle
     const cyclePos = ((w - 1) % 4) + 1; // 1..4
     const volumeMultiplier = cyclePos === 4 ? 0.6 : 1 + 0.05 * (cyclePos - 1); // 1.0, 1.05, 1.10, 0.6
-    const intensityBump = cyclePos === 4 ? -0.05 : 0.01 * (w - 1); // slight upward trend, deload down
 
     const adjustedDays = baseWeek.days.map(day => ({
       day_number: day.day_number,
