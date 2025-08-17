@@ -22,7 +22,7 @@ export async function ensureAuthOrStartOAuth(redirectTo: string): Promise<'proce
     }
     const { data: oauthData } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: base ? { redirectTo: `${base}${redirectTo}`, skipBrowserRedirect: true } : { skipBrowserRedirect: true }
+      options: base ? { redirectTo: `${base}/api/auth/callback?next=${encodeURIComponent(redirectTo)}`, skipBrowserRedirect: true } : { skipBrowserRedirect: true }
     });
     const url = oauthData?.url;
     if (typeof window !== 'undefined' && url) {
@@ -86,7 +86,7 @@ export async function ensureAuthOrStartOAuth(redirectTo: string): Promise<'proce
   } catch {}
 
   // Fallback to full-page redirect if popup could not be opened
-  await supabase.auth.signInWithOAuth(base ? { provider: 'google', options: { redirectTo: `${base}${redirectTo}` } } : { provider: 'google' });
+  await supabase.auth.signInWithOAuth(base ? { provider: 'google', options: { redirectTo: `${base}/api/auth/callback?next=${encodeURIComponent(redirectTo)}` } } : { provider: 'google' });
   return 'started_oauth';
 }
 
