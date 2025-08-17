@@ -119,7 +119,7 @@ Run migrations in Supabase SQL editor (manual):
 - **Middleware Integration**: Automatic session refresh and synchronization on every request
 - **Simplified API Security**: Clean server-side authentication with structured client patterns
 - **Session Persistence**: Robust session management across browser navigation and refresh
-- **OAuth Integration**: Popup-based Google authentication with proper session handling
+- **OAuth Integration**: Same-tab Google authentication with proper session handling
 - **Fixed Issues**: Resolved production authentication failures including:
   - 401 Unauthorized errors during program generation
   - Session cookie synchronization problems
