@@ -28,23 +28,30 @@ export default function DashboardPage() {
       <TopNav />
       <section className="pt-20 pb-10 px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <Badge className="bg-primary/10 text-primary border-primary/20">Overview</Badge>
               <h1 className="font-display text-3xl md:text-4xl">Dashboard</h1>
             </div>
-            <Button variant="outline" onClick={onGenerateNew}>Generate a new program</Button>
+            <Button 
+              variant="outline" 
+              onClick={onGenerateNew}
+              size="lg"
+              className="whitespace-nowrap font-medium border-2 border-primary/30 bg-background/80 backdrop-blur-sm hover:border-primary hover:bg-primary/5 shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              Generate a new program
+            </Button>
           </div>
 
-          <Card className="p-6 md:p-8 bg-card/50 backdrop-blur-sm border-border/50">
+          <Card className="p-6 md:p-8">
             <PRProgressChart />
           </Card>
 
-          <Card className="p-6 md:p-8 bg-card/50 backdrop-blur-sm border-border/50">
+          <Card className="p-6 md:p-8">
             <PRDashboard />
           </Card>
 
-          <Card className="p-6 md:p-8 bg-card/50 backdrop-blur-sm border-border/50">
+          <Card className="p-6 md:p-8">
             <h2 className="font-display text-2xl mb-4">Validity</h2>
             <ValidityCard ok={true}>
               <div className="space-y-4 text-foreground">

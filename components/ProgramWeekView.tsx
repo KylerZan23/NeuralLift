@@ -8,11 +8,11 @@ type WeightOverride = { low: number; high: number; perHand?: boolean } | null;
 
 export default function ProgramWeekView({ weekNumber, days, prs, experience, singleColumn, twoColumnExercises = false, suggestedWeightOverrides }: { weekNumber: number; days: Day[]; prs?: Big3PRs | null; experience?: ExperienceLevel; singleColumn?: boolean; twoColumnExercises?: boolean; exerciseSplitLeftCount?: number; suggestedWeightOverrides?: Record<string, WeightOverride> }) {
   return (
-    <section aria-label={`Week ${weekNumber}`} className="rounded-2xl bg-white/80 backdrop-blur-md p-4 shadow-xl">
+    <section aria-label={`Week ${weekNumber}`} className="rounded-2xl bg-white p-4 shadow-lg border border-gray-200/30">
       <h3 className="text-xl font-bold text-gray-900">Week {weekNumber}</h3>
       <div className={cn('mt-3 grid gap-4', singleColumn ? 'grid-cols-1' : 'md:grid-cols-2')}>
         {days.map(day => (
-          <div key={day.day_number} className="rounded-lg border border-border/50 p-3 bg-card/50 backdrop-blur-sm">
+          <div key={day.day_number} className="rounded-lg border border-gray-300/40 p-3 bg-gray-50/80">
             <h4 className="text-base font-semibold text-gray-900">Day {day.day_number} — {day.focus}</h4>
             {twoColumnExercises ? (
               (() => {

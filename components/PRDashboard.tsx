@@ -107,7 +107,12 @@ export default function PRDashboard() {
         </div>
       </div>
       <div className="mt-4 flex justify-end">
-        <Button onClick={onSave} disabled={!userId || saving}>
+        <Button 
+          onClick={onSave} 
+          disabled={!userId || saving}
+          size="lg"
+          className="font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-200 disabled:hover:scale-100 disabled:hover:shadow-xl"
+        >
           {saving ? 'Saving…' : 'Save'}
         </Button>
       </div>

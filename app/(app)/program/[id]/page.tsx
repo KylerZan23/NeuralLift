@@ -136,7 +136,7 @@ export default function ProgramPage() {
 
           <div className="relative">
             <div className="relative z-10">
-              <div className="p-6 md:p-8 bg-card/50 backdrop-blur-sm border-border/50 shadow-2xl rounded-xl">
+              <div className="p-6 md:p-8 bg-white shadow-xl rounded-xl border border-gray-200/50">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-display text-xl">Weekly Overview</h2>
                 </div>
