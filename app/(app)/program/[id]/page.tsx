@@ -114,11 +114,11 @@ export default function ProgramPage() {
         <div className="mx-auto max-w-7xl space-y-8">
           <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <h1 className="font-display text-3xl md:text-4xl">{program.name}</h1>
-            <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <Button 
                 onClick={() => setShowGating(true)}
-                size="md"
-                className="whitespace-nowrap"
+                size="lg"
+                className="whitespace-nowrap font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-200"
               >
                 Unlock full 12 weeks — $9.99
               </Button>
@@ -126,8 +126,8 @@ export default function ProgramPage() {
                 variant="outline" 
                 onClick={() => setShowGating(true)} 
                 title="Regenerate a program updated to your current PRs"
-                size="md"
-                className="whitespace-nowrap"
+                size="lg"
+                className="whitespace-nowrap font-medium border-2 border-primary/30 bg-background/80 backdrop-blur-sm hover:border-primary hover:bg-primary/5 shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 Generate a new program
               </Button>
@@ -163,7 +163,6 @@ export default function ProgramPage() {
                         days={program?.weeks?.find(week => week.week_number === w)?.days ?? []}
                         prs={prs}
                         experience={experience}
-                        singleColumn
                         twoColumnExercises
                         exerciseSplitLeftCount={4}
                       />
