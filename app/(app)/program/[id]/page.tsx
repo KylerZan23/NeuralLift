@@ -112,11 +112,25 @@ export default function ProgramPage() {
       <TopNav programId={program.program_id} />
       <section className="pt-20 pb-10 px-6 lg:px-8">
         <div className="mx-auto max-w-7xl space-y-8">
-          <header className="flex items-center justify-between">
+          <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <h1 className="font-display text-3xl md:text-4xl">{program.name}</h1>
-            <div className="flex gap-2">
-              <Button onClick={() => setShowGating(true)}>Unlock full 12 weeks — $9.99</Button>
-              <Button variant="outline" onClick={() => setShowGating(true)} title="Regenerate a program updated to your current PRs">Generate a new program</Button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+              <Button 
+                onClick={() => setShowGating(true)}
+                size="md"
+                className="whitespace-nowrap"
+              >
+                Unlock full 12 weeks — $9.99
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowGating(true)} 
+                title="Regenerate a program updated to your current PRs"
+                size="md"
+                className="whitespace-nowrap"
+              >
+                Generate a new program
+              </Button>
             </div>
           </header>
 
@@ -127,12 +141,16 @@ export default function ProgramPage() {
                   <h2 className="font-display text-xl">Weekly Overview</h2>
                 </div>
                 <Tabs value={String(selectedWeek)} onValueChange={(val) => handleWeekSelect(Number(val))}>
-                  <TabsList className="flex flex-wrap gap-2">
+                  <TabsList className="flex flex-wrap gap-2 p-2 bg-muted/30 rounded-lg">
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(w => (
                       <TabsTrigger
                         key={w}
                         value={String(w)}
-                        className={`rounded-md px-3 py-1 text-sm ${selectedWeek === w ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
+                        className={`rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                          selectedWeek === w 
+                            ? 'bg-primary text-primary-foreground shadow-sm' 
+                            : 'bg-background/60 text-muted-foreground hover:bg-background/80 hover:text-foreground'
+                        }`}
                       >
                         Week {w}
                       </TabsTrigger>
