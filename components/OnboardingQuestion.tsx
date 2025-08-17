@@ -78,9 +78,17 @@ export default function OnboardingQuestion({
         )}
       </div>
 
-      <div className="mt-8 flex justify-between">
-        <Button variant="secondary" onClick={onPrev}>Back</Button>
-        <Button onClick={onNext} aria-disabled={!isValid || submitting} disabled={!isValid || submitting} aria-busy={submitting}>
+      <div className="mt-8 flex justify-between items-center gap-4">
+        <Button variant="secondary" onClick={onPrev} className="min-w-[80px]">
+          Back
+        </Button>
+        <Button 
+          onClick={onNext} 
+          aria-disabled={!isValid || submitting} 
+          disabled={!isValid || submitting} 
+          aria-busy={submitting}
+          className="min-w-[120px]"
+        >
           {submitting ? 'Submitting…' : (nextLabel ?? 'Next')}
         </Button>
       </div>
