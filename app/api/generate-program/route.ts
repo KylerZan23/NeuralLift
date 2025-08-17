@@ -6,8 +6,7 @@ import programSchema from '@/types/program.schema.json';
 import { getServiceSupabaseClient } from '@/lib/integrations/supabase-server';
 import type { Program } from '@/types/program';
 import { z } from 'zod';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { createClient, type User } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 
 const ajv = new Ajv({ allErrors: true, strict: false });
@@ -49,50 +48,18 @@ export async function POST(req: NextRequest) {
   const gpt = Boolean(body.useGPT);
   const programId = body.programId ?? crypto.randomUUID();
   
-  // Derive authenticated user on the server; prefer cookies but also support Authorization: Bearer <token>
   const cookieStore = cookies();
-  let user: User | null = null;
-  try {
-    const authClient = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set(name, value, options);
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.set(name, '', { ...options, maxAge: 0 });
-          }
-        }
-      }
-    );
-    const { data: auth } = await authClient.auth.getUser();
-    user = auth?.user ?? null;
-  } catch {}
+  const supabase = createClient(cookieStore);
 
-  if (!user) {
-    try {
-      const bearer = req.headers.get('authorization') ?? req.headers.get('Authorization');
-      const token = bearer?.toLowerCase().startsWith('bearer ')
-        ? bearer.slice(7)
-        : undefined;
-      if (token) {
-        const direct = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          { global: { headers: { Authorization: `Bearer ${token}` } } }
-        );
-        const { data: auth } = await direct.auth.getUser();
-        user = auth?.user ?? null;
-      }
-    } catch {}
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = session.user;
   let program: Program;
   if (gpt) {
     program = await generateProgramWithLLM(input, { programId, citations: body.citations ?? [], userId: user.id });
@@ -121,8 +88,8 @@ export async function POST(req: NextRequest) {
     const ok = await isAllowedAndConsume({ key, limit: 5, windowSeconds: 60 });
     if (!ok) return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   } catch {}
-  const supabase = getServiceSupabaseClient();
-  await supabase.from('programs').upsert({ id: program.program_id, user_id: user.id, name: program.name, data: program, paid: program.paid ?? false });
+  const serviceSupabase = getServiceSupabaseClient();
+  await serviceSupabase.from('programs').upsert({ id: program.program_id, user_id: user.id, name: program.name, data: program, paid: program.paid ?? false });
   return NextResponse.json(program, { status: 201 });
 }
 

@@ -114,15 +114,17 @@ Run migrations in Supabase SQL editor (manual):
 - See `docs/implementation/TYPESCRIPT_BUILD_ERROR_FIX.md` for detailed fix documentation
 
 ### Authentication & Session Management
-- **SSR Compatibility**: Uses `@supabase/ssr` with `createBrowserClient` for proper cookie-based session management
-- **Production Fix**: Resolved critical issue where users couldn't generate programs due to session sync problems
-- **Browser/Server Sync**: Authentication state properly synchronized between client and server via cookies
-- **API Security**: Server routes use `createServerClient` with cookie handlers for session verification
-- **Fixed Issues**: Resolved production authentication failures where:
-  - Users sign in successfully in browser but API returns 401 Unauthorized
-  - Session cookies not properly set for server-side verification
-  - Client-side auth state not synchronized with server
-- See `docs/implementation/SUPABASE_SSR_AUTH_FIX.md` for implementation details
+- **Structured SSR Implementation**: Complete Supabase SSR pattern with middleware-based session management
+- **Production Ready**: Reliable authentication across all environments with proper cookie handling
+- **Middleware Integration**: Automatic session refresh and synchronization on every request
+- **Simplified API Security**: Clean server-side authentication with structured client patterns
+- **Session Persistence**: Robust session management across browser navigation and refresh
+- **OAuth Integration**: Popup-based Google authentication with proper session handling
+- **Fixed Issues**: Resolved production authentication failures including:
+  - 401 Unauthorized errors during program generation
+  - Session cookie synchronization problems
+  - Client/server authentication state mismatches
+- See `docs/ADR-012-supabase-ssr-restructure.md` for complete implementation details
 
 ## Testing
 - `yarn test` — unit tests for onboarding, gating, a11y.

@@ -1,4 +1,4 @@
-import { computeSuggestedWorkingWeight, computeSuggestedWorkingWeightRange } from '@/lib/weight-prescription';
+import { computeSuggestedWorkingWeight, computeSuggestedWorkingWeightRange } from '@/lib/core/weight-prescription';
 
 describe('computeSuggestedWorkingWeight', () => {
   const prs = { bench: 225, squat: 315, deadlift: 405 };

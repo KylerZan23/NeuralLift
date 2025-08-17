@@ -1,4 +1,4 @@
-import { OnboardingInput, generateFullProgram, generateProgramWithLLM } from '@/lib/program-generator';
+import { OnboardingInput, generateFullProgram, generateProgramWithLLM } from '@/lib/core/program-generator';
 
 describe('Split enforcement', () => {
   it('deterministic generator respects days per week', () => {

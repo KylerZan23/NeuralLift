@@ -1,4 +1,4 @@
-import { canViewWeek } from '@/lib/program-generator';
+import { canViewWeek } from '@/lib/core/program-generator';
 
 describe('gating logic', () => {
   it('allows week 1 free', () => {
