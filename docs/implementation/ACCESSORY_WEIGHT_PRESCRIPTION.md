@@ -10,8 +10,8 @@ This feature personalizes training by prescribing a specific working weight for 
 | Accessory Lift | Based on | Ratio |
 | --- | --- | --- |
 | Overhead Press (Barbell) | Bench | 0.55–0.65 |
-| Dumbbell Bench Press | Bench | 0.75–0.85 |
-| Incline Bench Press | Bench | 0.65–0.75 |
+| Dumbbell Bench Press | Bench | 0.65–0.75 |
+| Incline Dumbbell Press | Bench | 0.37–0.47 |
 | Triceps Pushdown | Bench | 0.35–0.45 |
 | Barbell Row | Deadlift | 0.45–0.55 |
 | Pull-Up (added load) | Deadlift | 0.35–0.45 |
@@ -20,6 +20,8 @@ This feature personalizes training by prescribing a specific working weight for 
 | Bulgarian Split Squat (per leg) | Back Squat | 0.35–0.45 |
 | Romanian Deadlift | Deadlift | 0.60–0.70 |
 | Bicep Curl (barbell) | Bench | 0.25–0.35 |
+| Seated Dumbbell Shoulder Press | Bench | 0.32–0.42 |
+| Incline Dumbbell Curl | Bench | 0.12–0.20 |
 
 3. Accessory 1RM = Big-3 1RM × Ratio
 4. Working weight for display = Accessory 1RM × 0.82 (single point)

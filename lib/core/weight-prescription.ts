@@ -23,10 +23,10 @@ const ACCESSORY_MAPPINGS: AccessoryMap[] = [
 
   // Presses
   { pattern: /\b(barbell\s+)?overhead\s+press\b|^standing\s+overhead\s+press$/i, base: 'bench', ratioLow: 0.55, ratioHigh: 0.65 },
-  { pattern: /dumbbell.*(overhead|shoulder)\s+press/i, base: 'bench', ratioLow: 0.40, ratioHigh: 0.50 },
+  { pattern: /dumbbell.*(overhead|shoulder)\s+press/i, base: 'bench', ratioLow: 0.32, ratioHigh: 0.42 },
   { pattern: /incline\s+barbell\s+(press|bench)/i, base: 'bench', ratioLow: 0.65, ratioHigh: 0.75 },
-  { pattern: /incline\s+dumbbell\s+(press|bench)/i, base: 'bench', ratioLow: 0.45, ratioHigh: 0.55 },
-  { pattern: /dumbbell\s+bench/i, base: 'bench', ratioLow: 0.75, ratioHigh: 0.85 },
+  { pattern: /incline\s+dumbbell\s+(press|bench)/i, base: 'bench', ratioLow: 0.37, ratioHigh: 0.47 },
+  { pattern: /dumbbell\s+bench/i, base: 'bench', ratioLow: 0.65, ratioHigh: 0.75 },
   { pattern: /close[- ]?grip\s+bench/i, base: 'bench', ratioLow: 0.80, ratioHigh: 0.90 },
   { pattern: /\bdips?\b/i, base: 'bench', ratioLow: 0.50, ratioHigh: 0.60 },
   { pattern: /triceps?.*pushdown/i, base: 'bench', ratioLow: 0.35, ratioHigh: 0.45 },
@@ -57,7 +57,7 @@ const ACCESSORY_MAPPINGS: AccessoryMap[] = [
 
   // Arms & shoulders
   { pattern: /(biceps?|ez).*bar.*curl|^ez\s+bar\s+curl$/i, base: 'bench', ratioLow: 0.25, ratioHigh: 0.35 },
-  { pattern: /dumbbell\s+curl/i, base: 'bench', ratioLow: 0.15, ratioHigh: 0.25 },
+  { pattern: /dumbbell\s+curl/i, base: 'bench', ratioLow: 0.12, ratioHigh: 0.20 },
   { pattern: /hammer\s+curl/i, base: 'bench', ratioLow: 0.15, ratioHigh: 0.25 },
   { pattern: /lateral\s+raise/i, base: 'bench', ratioLow: 0.08, ratioHigh: 0.12 },
   { pattern: /shrugs?\s*\(barbell\)|barbell\s+shrugs?/i, base: 'deadlift', ratioLow: 0.60, ratioHigh: 0.70 },
