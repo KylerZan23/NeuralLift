@@ -209,8 +209,8 @@ When you feed the *Paste-ready detailed prompt* into Cursor AI along with this `
           "day_number":1,
           "focus":"Push",
           "exercises":[
-            {"id":"bp","name":"Barbell Bench Press","sets":4,"reps":"8-10","rpe":1,"tempo":"","rest_seconds":180},
-            {"id":"dbp","name":"Dumbbell Shoulder Press","sets":3,"reps":"8-12","rpe":1,"tempo":"","rest_seconds":180}
+            {"id":"bp","name":"Barbell Bench Press","sets":4,"reps":"8-10","rpe":7,"tempo":"","rest_seconds":180},
+            {"id":"dbp","name":"Dumbbell Shoulder Press","sets":3,"reps":"8-12","rpe":7,"tempo":"","rest_seconds":180}
           ]
         }
       ]

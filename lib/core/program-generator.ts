@@ -119,7 +119,7 @@ Constraints (must follow):
   Beginner: 10–14; Intermediate: 14–18; Advanced: 18–26. Stay within ranges.
 - Rep ranges: main lifts 6–12 (emphasis 8–12); accessories 8–20.
 - Deload: 3:1 accumulation-to-deload cycle. Deload week reduces sets (~40%) and intensity.
-  - RIR 0-1 for all exercises. Sets 1–8. No intensity_pct display.
+  - RPE 5-10 for data storage (displayed as RIR 0-1 in UI). Sets 1–8. No intensity_pct display.
   - Rest_seconds: 180 seconds (3 minutes) for all exercises.
   - Session length dictates number of exercises per day (strict): 30 min → 4, 45 min → 5, 60 min → 6, 90 min → 7.
 - Tailor exercise selection to equipment, injuries, and movement prefs. Prefer barbell/dumbbell/cable basics; avoid risky variants where injuries conflict.
@@ -147,7 +147,7 @@ function slugifyId(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 16);
 }
 function buildAccessory(name: string): Exercise {
-  return { id: `${slugifyId(name)}-${Math.random().toString(36).slice(2, 6)}`, name, sets: 2, reps: '10-15', rpe: 1, tempo: '', rest_seconds: 180 } as Exercise;
+  return { id: `${slugifyId(name)}-${Math.random().toString(36).slice(2, 6)}`, name, sets: 2, reps: '10-15', rpe: 7, tempo: '', rest_seconds: 180 } as Exercise;
 }
 
 type EquipmentMode = 'gym' | 'dumbbells' | 'barbell';
@@ -385,22 +385,22 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       day_number: 1,
       focus: 'Full Body A',
       exercises: [
-        { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '5-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'row-01', name: 'Chest-Supported Row', sets: 3, reps: '6-10', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'curl-01', name: 'EZ Bar Curl', sets: 2, reps: '10-12', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'tri-01', name: 'Overhead Triceps Extension', sets: 2, reps: '10-15', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '5-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'row-01', name: 'Chest-Supported Row', sets: 3, reps: '6-10', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'curl-01', name: 'EZ Bar Curl', sets: 2, reps: '10-12', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'tri-01', name: 'Overhead Triceps Extension', sets: 2, reps: '10-15', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     },
     {
       day_number: 2,
       focus: 'Full Body B',
       exercises: [
-        { id: 'dl-01', name: 'Conventional Deadlift', sets: 3, reps: '4-6', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'ohp-01', name: 'Seated Dumbbell Shoulder Press', sets: 3, reps: '8-12', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'pull-01', name: 'Lat Pulldown', sets: 3, reps: '8-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'legp-01', name: 'Leg Press', sets: 2, reps: '10-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'calf-01', name: 'Seated Calf Raise', sets: 2, reps: '12-15', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'dl-01', name: 'Conventional Deadlift', sets: 3, reps: '4-6', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'ohp-01', name: 'Seated Dumbbell Shoulder Press', sets: 3, reps: '8-12', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'pull-01', name: 'Lat Pulldown', sets: 3, reps: '8-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'legp-01', name: 'Leg Press', sets: 2, reps: '10-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'calf-01', name: 'Seated Calf Raise', sets: 2, reps: '12-15', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     }
   ];
@@ -410,34 +410,34 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       day_number: 1,
       focus: 'Upper',
       exercises: [
-        { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'row-01', name: 'Chest-Supported Row', sets: 4, reps: '6-10', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'ohp-01', name: 'Seated Dumbbell Shoulder Press', sets: 3, reps: '8-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'pull-01', name: 'Lat Pulldown', sets: 3, reps: '8-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'lat-01', name: 'Lateral Raise', sets: 2, reps: '12-15', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'tri-01', name: 'Overhead Triceps Extension', sets: 2, reps: '10-15', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'row-01', name: 'Chest-Supported Row', sets: 4, reps: '6-10', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'ohp-01', name: 'Seated Dumbbell Shoulder Press', sets: 3, reps: '8-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'pull-01', name: 'Lat Pulldown', sets: 3, reps: '8-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'lat-01', name: 'Lateral Raise', sets: 2, reps: '12-15', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'tri-01', name: 'Overhead Triceps Extension', sets: 2, reps: '10-15', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     },
     {
       day_number: 2,
       focus: 'Lower',
       exercises: [
-        { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'rdl-01', name: 'Romanian Deadlift', sets: 3, reps: '8-10', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'legp-01', name: 'Leg Press', sets: 3, reps: '10-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'curl-02', name: 'Lying Leg Curl', sets: 2, reps: '10-12', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'calf-01', name: 'Seated Calf Raise', sets: 3, reps: '12-15', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'rdl-01', name: 'Romanian Deadlift', sets: 3, reps: '8-10', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'legp-01', name: 'Leg Press', sets: 3, reps: '10-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'curl-02', name: 'Lying Leg Curl', sets: 2, reps: '10-12', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'calf-01', name: 'Seated Calf Raise', sets: 3, reps: '12-15', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     },
     {
       day_number: 3,
       focus: 'Full body',
       exercises: [
-        { id: 'dl-01', name: 'Conventional Deadlift', sets: 3, reps: '4-6', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'incl-01', name: 'Incline Dumbbell Press', sets: 3, reps: '8-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'fsq-01', name: 'Front Squat', sets: 3, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'face-01', name: 'Face Pull', sets: 2, reps: '12-15', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'abs-01', name: 'Cable Crunch', sets: 2, reps: '10-15', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'dl-01', name: 'Conventional Deadlift', sets: 3, reps: '4-6', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'incl-01', name: 'Incline Dumbbell Press', sets: 3, reps: '8-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'fsq-01', name: 'Front Squat', sets: 3, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'face-01', name: 'Face Pull', sets: 2, reps: '12-15', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'abs-01', name: 'Cable Crunch', sets: 2, reps: '10-15', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     }
   ];
@@ -447,40 +447,40 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       day_number: 1,
       focus: 'Upper 1',
       exercises: [
-        { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'row-01', name: 'Chest-Supported Row', sets: 4, reps: '6-10', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'lat-01', name: 'Lateral Raise', sets: 2, reps: '12-15', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'tri-01', name: 'Overhead Triceps Extension', sets: 2, reps: '10-15', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'row-01', name: 'Chest-Supported Row', sets: 4, reps: '6-10', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'lat-01', name: 'Lateral Raise', sets: 2, reps: '12-15', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'tri-01', name: 'Overhead Triceps Extension', sets: 2, reps: '10-15', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     },
     {
       day_number: 2,
       focus: 'Lower 1',
       exercises: [
-        { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'rdl-01', name: 'Romanian Deadlift', sets: 3, reps: '8-10', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'legp-01', name: 'Leg Press', sets: 3, reps: '10-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'calf-01', name: 'Seated Calf Raise', sets: 3, reps: '12-15', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'rdl-01', name: 'Romanian Deadlift', sets: 3, reps: '8-10', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'legp-01', name: 'Leg Press', sets: 3, reps: '10-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'calf-01', name: 'Seated Calf Raise', sets: 3, reps: '12-15', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     },
     {
       day_number: 3,
       focus: 'Upper 2',
       exercises: [
-        { id: 'ohp-02', name: 'Standing Overhead Press', sets: 4, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'pull-01', name: 'Lat Pulldown', sets: 3, reps: '8-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'incl-01', name: 'Incline Dumbbell Press', sets: 3, reps: '8-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'curl-01', name: 'EZ Bar Curl', sets: 3, reps: '10-12', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'ohp-02', name: 'Standing Overhead Press', sets: 4, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'pull-01', name: 'Lat Pulldown', sets: 3, reps: '8-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'incl-01', name: 'Incline Dumbbell Press', sets: 3, reps: '8-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'curl-01', name: 'EZ Bar Curl', sets: 3, reps: '10-12', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     },
     {
       day_number: 4,
       focus: 'Lower 2',
       exercises: [
-        { id: 'dl-01', name: 'Conventional Deadlift', sets: 3, reps: '4-6', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'fsq-01', name: 'Front Squat', sets: 3, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'curl-02', name: 'Lying Leg Curl', sets: 3, reps: '10-12', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'abs-01', name: 'Cable Crunch', sets: 3, reps: '10-15', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'dl-01', name: 'Conventional Deadlift', sets: 3, reps: '4-6', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'fsq-01', name: 'Front Squat', sets: 3, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'curl-02', name: 'Lying Leg Curl', sets: 3, reps: '10-12', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'abs-01', name: 'Cable Crunch', sets: 3, reps: '10-15', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     }
   ];
@@ -490,51 +490,51 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       day_number: 1,
       focus: 'Push',
       exercises: [
-        { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'ohp-01', name: 'Seated Dumbbell Shoulder Press', sets: 3, reps: '8-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'incl-01', name: 'Incline Dumbbell Press', sets: 3, reps: '10-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'lat-01', name: 'Lateral Raise', sets: 3, reps: '12-15', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'tri-01', name: 'Overhead Triceps Extension', sets: 3, reps: '10-15', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'bp-01', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'ohp-01', name: 'Seated Dumbbell Shoulder Press', sets: 3, reps: '8-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'incl-01', name: 'Incline Dumbbell Press', sets: 3, reps: '10-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'lat-01', name: 'Lateral Raise', sets: 3, reps: '12-15', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'tri-01', name: 'Overhead Triceps Extension', sets: 3, reps: '10-15', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     },
     {
       day_number: 2,
       focus: 'Pull',
       exercises: [
-        { id: 'row-01', name: 'Chest-Supported Row', sets: 4, reps: '6-10', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'pull-01', name: 'Lat Pulldown', sets: 3, reps: '8-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'face-01', name: 'Face Pull', sets: 3, reps: '12-15', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'curl-01', name: 'EZ Bar Curl', sets: 3, reps: '10-12', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'row-01', name: 'Chest-Supported Row', sets: 4, reps: '6-10', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'pull-01', name: 'Lat Pulldown', sets: 3, reps: '8-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'face-01', name: 'Face Pull', sets: 3, reps: '12-15', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'curl-01', name: 'EZ Bar Curl', sets: 3, reps: '10-12', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     },
     {
       day_number: 3,
       focus: 'Legs',
       exercises: [
-        { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'rdl-01', name: 'Romanian Deadlift', sets: 3, reps: '8-10', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'legp-01', name: 'Leg Press', sets: 3, reps: '10-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'calf-01', name: 'Seated Calf Raise', sets: 3, reps: '12-15', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'sq-01', name: 'Barbell Back Squat', sets: 4, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'rdl-01', name: 'Romanian Deadlift', sets: 3, reps: '8-10', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'legp-01', name: 'Leg Press', sets: 3, reps: '10-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'calf-01', name: 'Seated Calf Raise', sets: 3, reps: '12-15', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     },
     {
       day_number: 4,
       focus: 'Upper',
       exercises: [
-        { id: 'bp-02', name: 'Close-Grip Bench Press', sets: 3, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'ohp-02', name: 'Standing Overhead Press', sets: 3, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'pull-01', name: 'Lat Pulldown', sets: 3, reps: '8-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'curl-01', name: 'EZ Bar Curl', sets: 2, reps: '10-12', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'bp-02', name: 'Close-Grip Bench Press', sets: 3, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'ohp-02', name: 'Standing Overhead Press', sets: 3, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'pull-01', name: 'Lat Pulldown', sets: 3, reps: '8-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'curl-01', name: 'EZ Bar Curl', sets: 2, reps: '10-12', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     },
     {
       day_number: 5,
       focus: 'Lower',
       exercises: [
-        { id: 'dl-01', name: 'Conventional Deadlift', sets: 3, reps: '4-6', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'fsq-01', name: 'Front Squat', sets: 3, reps: '6-8', rpe: 1, tempo: '', rest_seconds: restCompound },
-        { id: 'curl-02', name: 'Lying Leg Curl', sets: 3, reps: '10-12', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'abs-01', name: 'Cable Crunch', sets: 3, reps: '10-15', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'dl-01', name: 'Conventional Deadlift', sets: 3, reps: '4-6', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'fsq-01', name: 'Front Squat', sets: 3, reps: '6-8', rpe: 7, tempo: '', rest_seconds: restCompound },
+        { id: 'curl-02', name: 'Lying Leg Curl', sets: 3, reps: '10-12', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'abs-01', name: 'Cable Crunch', sets: 3, reps: '10-15', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     }
   ];
@@ -550,10 +550,10 @@ export function generateDeterministicWeek(input: OnboardingInput) {
       day_number: 6,
       focus: `Focus — ${sixDayFocus}`,
       exercises: [
-        { id: 'row-02', name: 'Chest-Supported Row', sets: 3, reps: '8-12', rpe: 1, tempo: '', rest_seconds: restAccessory },
-        { id: 'curl-02', name: 'Incline Dumbbell Curl', sets: 3, reps: '10-12', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'tri-02', name: 'Cable Triceps Pushdown', sets: 3, reps: '10-12', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'lat-02', name: 'Cable Lateral Raise', sets: 3, reps: '12-15', rpe: 1, tempo: '', rest_seconds: 180 },
+        { id: 'row-02', name: 'Chest-Supported Row', sets: 3, reps: '8-12', rpe: 7, tempo: '', rest_seconds: restAccessory },
+        { id: 'curl-02', name: 'Incline Dumbbell Curl', sets: 3, reps: '10-12', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'tri-02', name: 'Cable Triceps Pushdown', sets: 3, reps: '10-12', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'lat-02', name: 'Cable Lateral Raise', sets: 3, reps: '12-15', rpe: 7, tempo: '', rest_seconds: 180 },
       ]
     }
   ];

@@ -35,13 +35,13 @@ export default function HomePage() {
       day_number: 1,
       focus: 'Push',
       exercises: [
-        { id: 'bb-bench', name: 'Barbell Bench Press', sets: 3, reps: '5-8', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'incline-db-press', name: 'Incline Dumbbell Press', sets: 3, reps: '8-10', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'db-shoulder-press', name: 'Seated Dumbbell Shoulder Press', sets: 2, reps: '5-8', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'cable-lateral-raise', name: 'Cable Lateral Raise', sets: 3, reps: '10-12', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'oh-cable-tricep-ext', name: 'Overhead Cable Tricep Extension', sets: 3, reps: '5-8', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'cable-tricep-kickback', name: 'Cable Tricep Kickback', sets: 2, reps: '10-12', rpe: 1, tempo: '', rest_seconds: 180 },
-        { id: 'cable-crunches', name: 'Cable Crunches', sets: 2, reps: '10-12', rpe: 1, tempo: '', rest_seconds: 180 }
+        { id: 'bb-bench', name: 'Barbell Bench Press', sets: 3, reps: '5-8', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'incline-db-press', name: 'Incline Dumbbell Press', sets: 3, reps: '8-10', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'db-shoulder-press', name: 'Seated Dumbbell Shoulder Press', sets: 2, reps: '5-8', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'cable-lateral-raise', name: 'Cable Lateral Raise', sets: 3, reps: '10-12', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'oh-cable-tricep-ext', name: 'Overhead Cable Tricep Extension', sets: 3, reps: '5-8', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'cable-tricep-kickback', name: 'Cable Tricep Kickback', sets: 2, reps: '10-12', rpe: 7, tempo: '', rest_seconds: 180 },
+        { id: 'cable-crunches', name: 'Cable Crunches', sets: 2, reps: '10-12', rpe: 7, tempo: '', rest_seconds: 180 }
       ]
     }
   ];
