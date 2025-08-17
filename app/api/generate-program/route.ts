@@ -124,14 +124,42 @@ export async function POST(req: NextRequest) {
     console.error('❌ [generate-program] Program generation failed:', error);
     return NextResponse.json({ error: 'Program generation failed', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
+  console.log('🔍 [generate-program] Preparing program for validation');
+  
+  // Extract user_id if present (not part of schema) and clean program for validation
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { user_id, ...programForValidation } = program as Program & { user_id?: string };
+  
+  // Ensure all required fields are properly typed for schema validation
+  const cleanedProgram = {
+    ...programForValidation,
+    weeks: programForValidation.weeks?.map((week) => ({
+      ...week,
+      days: week.days?.map((day) => ({
+        ...day,
+        notes: day.notes || "", // Ensure notes is string, not null
+        exercises: day.exercises?.map((exercise) => ({
+          ...exercise,
+          intensity_pct: exercise.intensity_pct ? Number(exercise.intensity_pct) : undefined, // Ensure number type
+          rpe: Number(exercise.rpe), // Ensure number type
+          sets: Number(exercise.sets), // Ensure number type
+          rest_seconds: Number(exercise.rest_seconds), // Ensure number type
+        }))
+      }))
+    }))
+  };
+
   console.log('🔍 [generate-program] Validating program schema');
   // Validate program against JSON schema before saving
-  const valid = validateProgram(program);
+  const valid = validateProgram(cleanedProgram);
   if (!valid) {
     console.error('❌ [generate-program] Schema validation failed:', validateProgram.errors);
     return NextResponse.json({ error: 'Invalid program payload', details: validateProgram.errors }, { status: 400 });
   }
   console.log('✅ [generate-program] Schema validation passed');
+  
+  // Use the cleaned program for further processing
+  program = cleanedProgram as Program;
 
   // Simple in-memory rate limit per IP per minute (best-effort; for production use Upstash Redis)
   console.log('🚦 [generate-program] Checking rate limits');
