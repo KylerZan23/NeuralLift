@@ -26,8 +26,7 @@ export default function ProgramWeekView({ weekNumber, days, prs, experience, sin
                           <div>
                             <div className="font-medium text-foreground">{ex.name}</div>
                             <div className="text-sm text-muted-foreground">
-                              {ex.sets} sets × {ex.reps} reps · RPE {ex.rpe} · Tempo {ex.tempo} · Rest {Math.round((ex.rest_seconds ?? 0) / 60)}m
-                              {ex.intensity_pct != null ? <> · {Math.round(ex.intensity_pct * 100)}%</> : null}
+                              {ex.sets} sets × {ex.reps} reps · RIR 0-1 · Rest {Math.round((ex.rest_seconds ?? 0) / 60)}m
                             </div>
                             <SuggestedWeight name={ex.name} prs={prs} experience={experience} overrides={suggestedWeightOverrides} />
                           </div>
@@ -55,8 +54,7 @@ export default function ProgramWeekView({ weekNumber, days, prs, experience, sin
                               <div>
                                 <div className="font-medium text-foreground">{ex.name}</div>
                                 <div className="text-sm text-muted-foreground">
-                                  {ex.sets} sets × {ex.reps} reps · RPE {ex.rpe} · Tempo {ex.tempo} · Rest {Math.round((ex.rest_seconds ?? 0) / 60)}m
-                                  {ex.intensity_pct != null ? <> · {Math.round(ex.intensity_pct * 100)}%</> : null}
+                                  {ex.sets} sets × {ex.reps} reps · RIR 0-1 · Rest {Math.round((ex.rest_seconds ?? 0) / 60)}m
                                 </div>
                                 <SuggestedWeight name={ex.name} prs={prs} experience={experience} overrides={suggestedWeightOverrides} />
                               </div>
@@ -69,8 +67,7 @@ export default function ProgramWeekView({ weekNumber, days, prs, experience, sin
                               <div>
                                 <div className="font-medium text-foreground">{ex.name}</div>
                                 <div className="text-sm text-muted-foreground">
-                                  {ex.sets} sets × {ex.reps} reps · RPE {ex.rpe} · Tempo {ex.tempo} · Rest {Math.round((ex.rest_seconds ?? 0) / 60)}m
-                                  {ex.intensity_pct != null ? <> · {Math.round(ex.intensity_pct * 100)}%</> : null}
+                                  {ex.sets} sets × {ex.reps} reps · RIR 0-1 · Rest {Math.round((ex.rest_seconds ?? 0) / 60)}m
                                 </div>
                                 <SuggestedWeight name={ex.name} prs={prs} experience={experience} overrides={suggestedWeightOverrides} />
                               </div>
@@ -89,8 +86,7 @@ export default function ProgramWeekView({ weekNumber, days, prs, experience, sin
                     <div>
                       <div className="font-medium text-foreground">{ex.name}</div>
                       <div className="text-sm text-muted-foreground">
-                        {ex.sets} sets × {ex.reps} reps · RPE {ex.rpe} · Tempo {ex.tempo} · Rest {Math.round((ex.rest_seconds ?? 0) / 60)}m
-                        {ex.intensity_pct != null ? <> · {Math.round(ex.intensity_pct * 100)}%</> : null}
+                        {ex.sets} sets × {ex.reps} reps · RIR 0-1 · Rest {Math.round((ex.rest_seconds ?? 0) / 60)}m
                       </div>
                       <SuggestedWeight name={ex.name} prs={prs} experience={experience} overrides={suggestedWeightOverrides} />
                     </div>
@@ -114,12 +110,28 @@ function SuggestedWeight({ name, prs, experience, overrides }: { name: string; p
     if (!prs) return null;
     return computeSuggestedWorkingWeightRange(name, prs, experience ?? 'Intermediate');
   }, [name, prs, experience, overrides]);
-  if (range == null) return null;
+  
+  const isMachineExercise = /leg\s+extension|leg\s+curl|lying\s+leg\s+curl|hamstring\s+curl|lat\s+pulldown|leg\s+press|seated\s+calf\s+raise|cable|machine|smith/i.test(name);
+  
+  if (range == null) {
+    // Show machine message even when no weight suggestion available
+    if (isMachineExercise) {
+      return (
+        <div className="mt-1 text-xs text-gray-500">
+          <span className="cursor-help" title="Weight dependent on machine type">Weight dependent on machine type ⓘ</span>
+        </div>
+      );
+    }
+    return null;
+  }
+  
   return (
     <div className="mt-1 text-xs text-indigo-700">
       Suggested: {range.low}–{range.high} lb
       {range.perHand ? (
         <span className="ml-1 cursor-help" title="Per-hand load. Use this weight in each hand for dumbbell movements.">ⓘ</span>
+      ) : isMachineExercise ? (
+        <span className="ml-1 cursor-help" title="Weight dependent on machine type">ⓘ</span>
       ) : null}
     </div>
   );

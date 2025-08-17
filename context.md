@@ -86,10 +86,10 @@ These rules must always be enforced by the program generator (GPT may be used to
 * Microprogression: +2.5–5 lbs when last set RPE ≤ 7 for two sessions
 * Warmup algorithms: 3–4 warmup sets ramping to working set intensity using PR-based % conversions
 
-**Rest & tempo**
+**Rest & RIR**
 
-* Default tempo: 2-0-1
-* Rest: 120s-210s for compound; 120s-180s for accessory
+* All exercises: 180s (3 minutes) rest
+* RIR: 0-1 for all exercises (no tempo notation)
 
 **Safety**
 
@@ -209,8 +209,8 @@ When you feed the *Paste-ready detailed prompt* into Cursor AI along with this `
           "day_number":1,
           "focus":"Push",
           "exercises":[
-            {"id":"bp","name":"Barbell Bench Press","sets":4,"reps":"8-10","rpe":7,"tempo":"2-0-1","rest_seconds":90},
-            {"id":"dbp","name":"Dumbbell Shoulder Press","sets":3,"reps":"8-12","rpe":7,"tempo":"2-0-1","rest_seconds":75}
+            {"id":"bp","name":"Barbell Bench Press","sets":4,"reps":"8-10","rpe":1,"tempo":"","rest_seconds":180},
+            {"id":"dbp","name":"Dumbbell Shoulder Press","sets":3,"reps":"8-12","rpe":1,"tempo":"","rest_seconds":180}
           ]
         }
       ]
