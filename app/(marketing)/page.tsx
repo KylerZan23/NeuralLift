@@ -23,6 +23,8 @@ export default function HomePage() {
   }, []);
   const gotoOnboarding = useCallback(async () => {
     const result = await ensureAuthOrStartOAuth('/onboarding/1');
+    // If user is already authenticated, navigate to onboarding
+    // Otherwise, they'll be redirected to Google OAuth and then back to onboarding
     if (result === 'proceeded') router.push('/onboarding/1');
   }, [router]);
   const gotoAbout = useCallback(() => {
