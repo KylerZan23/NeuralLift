@@ -75,27 +75,23 @@ export async function POST(req: NextRequest) {
   console.log('⚡ [generate-program] Supabase client created');
 
   const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-  console.log('🔐 [generate-program] Session check result:', {
-    hasSession: !!session,
-    sessionError: sessionError?.message,
-    userId: session?.user?.id,
-    userEmail: session?.user?.email,
-    accessToken: session?.access_token ? '***EXISTS***' : 'MISSING',
-    refreshToken: session?.refresh_token ? '***EXISTS***' : 'MISSING',
+  console.log('🔐 [generate-program] User authentication result:', {
+    hasUser: !!user,
+    userError: userError?.message,
+    userId: user?.id,
+    userEmail: user?.email,
   });
 
-  if (!session) {
-    console.error('❌ [generate-program] No session found - returning 401');
+  if (!user) {
+    console.error('❌ [generate-program] No authenticated user found - returning 401');
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
   console.log('✅ [generate-program] Authentication successful, proceeding with generation');
-
-  const user = session.user;
   console.log('🤖 [generate-program] Starting program generation:', {
     useGPT: gpt,
     userId: user.id,
