@@ -79,15 +79,33 @@ async function repairWithModel(raw: string, errors: ErrorObject[]): Promise<stri
   }
 }
 
-
+function buildUserProfile(input: OnboardingInput): string {
+  const goals = (input.goals ?? []).join(', ');
+  const eq = (input.equipment_available ?? []).join(', ');
+  const prefs = (input.movement_preferences ?? []).join(', ');
+  const inj = (input.injuries ?? []).join(', ');
+  const pr = input.big3_PRs ?? {};
+  const focus = input.focus_point ? `Focus: ${input.focus_point}.` : '';
+  return [
+    `Experience: ${input.experience_level}.`,
+    `Training days/week: ${input.training_frequency_preference}.`,
+    `Session length: ${input.session_length_min} min.`,
+    `Goals: ${goals || 'hypertrophy'}.`,
+    `Equipment: ${eq || 'Gym'}.`,
+    `Preferred split: ${input.preferred_split ?? 'auto'}.`,
+    `Rest preference: ${input.rest_pref}.`,
+    `Nutrition: ${input.nutrition}.`,
+    `PRs (lbs): bench=${pr.bench ?? 'n/a'}, squat=${pr.squat ?? 'n/a'}, deadlift=${pr.deadlift ?? 'n/a'}.`,
+    `Injuries: ${inj || 'none'}.`,
+    `Movement prefs: ${prefs || 'none'}.`,
+    focus
+  ].join(' ');
+}
 
 const systemPrompt = `
-You are an expert evidence-based strength coach. Generate a 12-week hypertrophy program as valid JSON.
+You are an expert evidence-based strength coach specializing in hypertrophy training. Generate a comprehensive 12-week program as strict JSON conforming to the given schema. 
 
-CRITICAL JSON REQUIREMENTS:
-- Return ONLY valid JSON (no explanations, no text outside JSON)
-- Use EXACTLY this structure with proper syntax
-- Generate ALL 12 weeks but keep exercises simple to avoid JSON errors
+CRITICAL: Return ONLY valid, well-formed JSON. Ensure proper comma placement, no trailing commas, and complete JSON structure.
 
 MANDATORY CONSTRAINTS (NEVER VIOLATE):
 - 12 weeks total; training days per week based on user preference (2-6 days)
@@ -171,10 +189,10 @@ CRITICAL JSON SCHEMA REQUIREMENTS:
 - "big3_prs" MUST be object (can be empty {})
 - DO NOT include "user_id" field anywhere
 
-SIMPLIFIED OUTPUT (generate EXACTLY like this):
+EXACT OUTPUT FORMAT (generate ALL 12 weeks like this):
 {
-  "program_id": "test",
-  "name": "12-week Program", 
+  "program_id": "string",
+  "name": "string", 
   "paid": false,
   "weeks": [
     {
@@ -182,14 +200,35 @@ SIMPLIFIED OUTPUT (generate EXACTLY like this):
       "days": [
         {
           "day_number": 1,
-          "focus": "Upper",
+          "focus": "Upper Body",
           "notes": "",
           "exercises": [
             {
-              "id": "ex1",
-              "name": "Bench Press",
+              "id": "bench-press-001",
+              "name": "Barbell Bench Press",
               "sets": 4,
-              "reps": "8-10",
+              "reps": "6-8",
+              "rpe": 7,
+              "tempo": "",
+              "rest_seconds": 180
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "week_number": 2,
+      "days": [
+        {
+          "day_number": 1,
+          "focus": "Upper Body",
+          "notes": "",
+          "exercises": [
+            {
+              "id": "bench-press-002",
+              "name": "Barbell Bench Press",
+              "sets": 4,
+              "reps": "6-8",
               "rpe": 7,
               "tempo": "",
               "rest_seconds": 180
@@ -201,14 +240,12 @@ SIMPLIFIED OUTPUT (generate EXACTLY like this):
   ],
   "metadata": {
     "created_at": "2025-08-19T06:00:00.000Z",
-    "source": ["Schoenfeld"],
+    "source": ["Schoenfeld", "Jeff Nippard", "Mike Israetel"],
     "volume_profile": {},
     "big3_prs": {},
     "experience_level": "Intermediate"
   }
 }
-
-CRITICAL: Generate ALL 12 weeks using this EXACT pattern. Keep exercise names SHORT. Use simple IDs like "ex1", "ex2".
 
 CRITICAL JSON SYNTAX RULES:
 - The "weeks" array MUST contain exactly 12 week objects (week_number 1 through 12)
@@ -785,17 +822,17 @@ export async function generateProgramWithLLM(
   try {
     const { OpenAI } = await import('openai');
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const userProfile = buildUserProfile(input);
+    const citations = opts?.citations ?? ['Schoenfeld', 'Nuckols', 'Jeff Nippard', 'Mike Israetel', 'Helms'];
 
-    // Try gpt-3.5-turbo first as it's often more reliable for structured JSON
     const response = await client.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      temperature: 0.1, // Lower temperature for more consistent JSON
+      model: 'gpt-4o',
+      temperature: 0.2,
       response_format: { type: 'json_object' },
-      stream: false,
-      max_tokens: 4096, // GPT-3.5-turbo maximum completion tokens
+      stream: false, // Ensure this line is added
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Generate a 12-week program for: ${input.experience_level} lifter, ${input.training_frequency_preference} days/week, ${input.session_length_min} min sessions. Program ID: ${programId}` }
+        { role: 'user', content: `User profile:\n${userProfile}\nProgram id: ${programId}\nCitations to include in metadata.source: ${citations.join(', ')}` }
       ]
     } as OpenAI.Chat.ChatCompletionCreateParams);
 
