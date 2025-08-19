@@ -806,8 +806,6 @@ export async function generateProgramWithLLM(
   try {
     const { OpenAI } = await import('openai');
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const userProfile = buildUserProfile(input);
-    const citations = opts?.citations ?? ['Schoenfeld', 'Nuckols', 'Jeff Nippard', 'Mike Israetel', 'Helms'];
 
     // Try gpt-3.5-turbo first as it's often more reliable for structured JSON
     const response = await client.chat.completions.create({
