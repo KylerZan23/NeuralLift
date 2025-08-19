@@ -103,7 +103,9 @@ function buildUserProfile(input: OnboardingInput): string {
 }
 
 const systemPrompt = `
-You are an expert evidence-based strength coach specializing in hypertrophy training. Generate a comprehensive 12-week program as strict JSON conforming to the given schema. Return ONLY valid JSON.
+You are an expert evidence-based strength coach specializing in hypertrophy training. Generate a comprehensive 12-week program as strict JSON conforming to the given schema. 
+
+CRITICAL: Return ONLY valid, well-formed JSON. Ensure proper comma placement, no trailing commas, and complete JSON structure.
 
 MANDATORY CONSTRAINTS (NEVER VIOLATE):
 - 12 weeks total; training days per week based on user preference (2-6 days)
@@ -245,7 +247,14 @@ EXACT OUTPUT FORMAT (generate ALL 12 weeks like this):
   }
 }
 
-IMPORTANT: The "weeks" array MUST contain exactly 12 week objects (week_number 1 through 12). Do not generate only 1 week!
+CRITICAL JSON SYNTAX RULES:
+- The "weeks" array MUST contain exactly 12 week objects (week_number 1 through 12)
+- NEVER use trailing commas after the last element in arrays or objects
+- ALWAYS use double quotes for strings, never single quotes
+- ENSURE all opening braces { have closing braces }
+- ENSURE all opening brackets [ have closing brackets ]
+- COMPLETE the entire JSON structure before stopping
+- NO TEXT outside the JSON object
 `;
 
 // Helpers for session constraints and content hygiene
@@ -833,16 +842,35 @@ export async function generateProgramWithLLM(
     }
 
     const text = response.choices?.[0]?.message?.content ?? '';
+    
+    // Find JSON boundaries more carefully
     const jsonStart = text.indexOf('{');
     const jsonEnd = text.lastIndexOf('}');
     if (jsonStart < 0 || jsonEnd <= jsonStart) throw new Error('No JSON in response');
+    
+    // Extract potential JSON
+    let rawJson = text.slice(jsonStart, jsonEnd + 1);
+    
+    // Basic JSON cleanup for common AI errors
+    try {
+      // Remove any trailing commas before closing braces/brackets
+      rawJson = rawJson.replace(/,(\s*[}\]])/g, '$1');
+      // Ensure proper escaping of quotes in strings
+      rawJson = rawJson.replace(/(?<!\\)"/g, '"');
+      // Basic validation that it's complete JSON
+      if (!rawJson.endsWith('}')) {
+        throw new Error('Incomplete JSON structure');
+      }
+    } catch (cleanupError) {
+      console.log(`⚠️ [generateProgramWithLLM] JSON cleanup failed: ${cleanupError}`);
+    }
     // Attempt to parse and validate the AI response
     let attempts = 0;
     const maxAttempts = 3;
     
     while (attempts < maxAttempts) {
       try {
-        const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as Program;
+        const parsed = JSON.parse(rawJson) as Program;
         let prepared = ensureMetadata(coerceProgramId(parsed, programId));
         if (opts?.userId) prepared.user_id = opts.userId;
         prepared.metadata = {
