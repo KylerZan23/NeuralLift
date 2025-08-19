@@ -856,7 +856,31 @@ export async function generateProgramWithLLM(
     }
   } catch (error) {
     console.error('❌ [generateProgramWithLLM] AI generation failed:', error);
-    throw new Error(`AI program generation failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+    
+    // Check if it's a quota/billing error and provide fallback
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('insufficient_quota')) {
+      console.log('⚠️ [generateProgramWithLLM] Quota exceeded, falling back to deterministic generation');
+      const weeks = generateFullProgram(input);
+      const fallback: Program = {
+        program_id: programId,
+        name: '12-week Hypertrophy Program (Fallback)',
+        paid: false,
+        weeks,
+        metadata: { 
+          created_at: new Date().toISOString(), 
+          source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], 
+          volume_profile: {}, 
+          big3_prs: input.big3_PRs ?? {}, 
+          experience_level: input.experience_level,
+          fallback_reason: 'OpenAI quota exceeded'
+        }
+      } as Program;
+      if (opts?.userId) fallback.user_id = opts.userId;
+      return fallback;
+    }
+    
+    throw new Error(`AI program generation failed: ${errorMessage}. Please try again.`);
   }
   
   // This should never be reached due to the throw statements above
