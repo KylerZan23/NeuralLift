@@ -854,6 +854,7 @@ export async function generateProgramWithLLM(
         prepared = applySessionConstraints(prepared, input);
         
         // Clean program for schema validation (remove user_id and fix notes)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { user_id: _, ...cleanProgram } = prepared as Program & { user_id?: string };
         const schemaValidProgram = {
           ...cleanProgram,
@@ -890,6 +891,7 @@ export async function generateProgramWithLLM(
           };
           
           // Clean repaired program for validation  
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { user_id: __, ...cleanRepaired } = final as Program & { user_id?: string };
           const schemaValidRepaired = {
             ...cleanRepaired,
