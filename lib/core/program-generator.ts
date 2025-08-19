@@ -169,27 +169,43 @@ SCIENTIFIC BASIS:
 - Implement evidence-based exercise selection
 - Respect recovery needs and adaptation timelines
 
-OUTPUT FORMAT:
+CRITICAL JSON SCHEMA REQUIREMENTS:
+- ALL fields must be exactly as specified below
+- "paid" MUST be boolean (true/false), never string
+- "week_number" MUST be integer 1-12
+- "day_number" MUST be integer 1-7
+- "sets" MUST be integer (1-8), never string
+- "rpe" MUST be integer (5-10), never string
+- "rest_seconds" MUST be exactly 180 (integer)
+- "reps" MUST be string format like "8-12" or "10"
+- "tempo" MUST be string (can be empty "")
+- "notes" can be string or null
+- "created_at" MUST be ISO format: "2025-01-01T00:00:00.000Z"
+- "source" MUST be array of strings
+- "volume_profile" MUST be object (can be empty {})
+- "big3_prs" MUST be object (can be empty {})
+
+EXACT OUTPUT FORMAT (copy this structure exactly):
 {
   "program_id": "string",
   "name": "string", 
-  "paid": boolean,
+  "paid": false,
   "weeks": [
     {
-      "week_number": number,
+      "week_number": 1,
       "days": [
         {
-          "day_number": number,
+          "day_number": 1,
           "focus": "string",
-          "notes": "string or null",
+          "notes": null,
           "exercises": [
             {
-              "id": "string",
-              "name": "string",
-              "sets": number,
-              "reps": "string",
-              "rpe": number,
-              "tempo": "string",
+              "id": "bench-press-001",
+              "name": "Barbell Bench Press",
+              "sets": 4,
+              "reps": "6-8",
+              "rpe": 7,
+              "tempo": "",
               "rest_seconds": 180
             }
           ]
@@ -198,11 +214,11 @@ OUTPUT FORMAT:
     }
   ],
   "metadata": {
-    "created_at": "ISO string",
-    "source": ["array of strings"],
+    "created_at": "2025-08-19T06:00:00.000Z",
+    "source": ["Schoenfeld", "Jeff Nippard", "Mike Israetel"],
     "volume_profile": {},
     "big3_prs": {},
-    "experience_level": "string"
+    "experience_level": "Intermediate"
   }
 }
 `;
@@ -820,6 +836,7 @@ export async function generateProgramWithLLM(
         
         // If validation fails, try to repair
         console.log(`⚠️ [generateProgramWithLLM] Validation failed on attempt ${attempts + 1}, trying repair...`);
+        console.log(`🔍 [generateProgramWithLLM] Validation errors:`, JSON.stringify(validateProgram.errors, null, 2));
         const repaired = await repairWithModel(JSON.stringify(prepared), validateProgram.errors ?? []);
         if (repaired) {
           const reparsed = JSON.parse(repaired) as Program;
@@ -843,14 +860,48 @@ export async function generateProgramWithLLM(
         
         attempts++;
         if (attempts >= maxAttempts) {
-          throw new Error(`Failed to generate valid program after ${maxAttempts} attempts`);
+          console.log(`❌ [generateProgramWithLLM] Failed after ${maxAttempts} attempts, falling back to deterministic generation`);
+          const weeks = generateFullProgram(input);
+          const fallback: Program = {
+            program_id: programId,
+            name: '12-week Hypertrophy Program (Validation Fallback)',
+            paid: false,
+            weeks,
+            metadata: { 
+              created_at: new Date().toISOString(), 
+              source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], 
+              volume_profile: {}, 
+              big3_prs: input.big3_PRs ?? {}, 
+              experience_level: input.experience_level,
+              fallback_reason: 'AI validation failed'
+            }
+          } as Program;
+          if (opts?.userId) fallback.user_id = opts.userId;
+          return fallback;
         }
         
       } catch (parseError) {
         attempts++;
         console.log(`⚠️ [generateProgramWithLLM] Parse error on attempt ${attempts}: ${parseError}`);
         if (attempts >= maxAttempts) {
-          throw new Error(`Failed to parse AI response after ${maxAttempts} attempts: ${parseError}`);
+          console.log(`❌ [generateProgramWithLLM] Parse failed after ${maxAttempts} attempts, falling back to deterministic generation`);
+          const weeks = generateFullProgram(input);
+          const fallback: Program = {
+            program_id: programId,
+            name: '12-week Hypertrophy Program (Parse Fallback)',
+            paid: false,
+            weeks,
+            metadata: { 
+              created_at: new Date().toISOString(), 
+              source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], 
+              volume_profile: {}, 
+              big3_prs: input.big3_PRs ?? {}, 
+              experience_level: input.experience_level,
+              fallback_reason: 'AI parsing failed'
+            }
+          } as Program;
+          if (opts?.userId) fallback.user_id = opts.userId;
+          return fallback;
         }
       }
     }
