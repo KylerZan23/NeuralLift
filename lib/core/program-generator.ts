@@ -103,9 +103,12 @@ function buildUserProfile(input: OnboardingInput): string {
 }
 
 const systemPrompt = `
-You are an expert evidence-based strength coach specializing in hypertrophy training. Generate a comprehensive 12-week program as strict JSON conforming to the given schema. 
+You are an expert evidence-based strength coach. Generate a 12-week hypertrophy program as valid JSON.
 
-CRITICAL: Return ONLY valid, well-formed JSON. Ensure proper comma placement, no trailing commas, and complete JSON structure.
+CRITICAL JSON REQUIREMENTS:
+- Return ONLY valid JSON (no explanations, no text outside JSON)
+- Use EXACTLY this structure with proper syntax
+- Generate ALL 12 weeks but keep exercises simple to avoid JSON errors
 
 MANDATORY CONSTRAINTS (NEVER VIOLATE):
 - 12 weeks total; training days per week based on user preference (2-6 days)
@@ -189,10 +192,10 @@ CRITICAL JSON SCHEMA REQUIREMENTS:
 - "big3_prs" MUST be object (can be empty {})
 - DO NOT include "user_id" field anywhere
 
-EXACT OUTPUT FORMAT (generate ALL 12 weeks like this):
+SIMPLIFIED OUTPUT (generate EXACTLY like this):
 {
-  "program_id": "string",
-  "name": "string", 
+  "program_id": "test",
+  "name": "12-week Program", 
   "paid": false,
   "weeks": [
     {
@@ -200,35 +203,14 @@ EXACT OUTPUT FORMAT (generate ALL 12 weeks like this):
       "days": [
         {
           "day_number": 1,
-          "focus": "Upper Body",
+          "focus": "Upper",
           "notes": "",
           "exercises": [
             {
-              "id": "bench-press-001",
-              "name": "Barbell Bench Press",
+              "id": "ex1",
+              "name": "Bench Press",
               "sets": 4,
-              "reps": "6-8",
-              "rpe": 7,
-              "tempo": "",
-              "rest_seconds": 180
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "week_number": 2,
-      "days": [
-        {
-          "day_number": 1,
-          "focus": "Upper Body",
-          "notes": "",
-          "exercises": [
-            {
-              "id": "bench-press-002",
-              "name": "Barbell Bench Press",
-              "sets": 4,
-              "reps": "6-8",
+              "reps": "8-10",
               "rpe": 7,
               "tempo": "",
               "rest_seconds": 180
@@ -240,12 +222,14 @@ EXACT OUTPUT FORMAT (generate ALL 12 weeks like this):
   ],
   "metadata": {
     "created_at": "2025-08-19T06:00:00.000Z",
-    "source": ["Schoenfeld", "Jeff Nippard", "Mike Israetel"],
+    "source": ["Schoenfeld"],
     "volume_profile": {},
     "big3_prs": {},
     "experience_level": "Intermediate"
   }
 }
+
+CRITICAL: Generate ALL 12 weeks using this EXACT pattern. Keep exercise names SHORT. Use simple IDs like "ex1", "ex2".
 
 CRITICAL JSON SYNTAX RULES:
 - The "weeks" array MUST contain exactly 12 week objects (week_number 1 through 12)
@@ -825,14 +809,16 @@ export async function generateProgramWithLLM(
     const userProfile = buildUserProfile(input);
     const citations = opts?.citations ?? ['Schoenfeld', 'Nuckols', 'Jeff Nippard', 'Mike Israetel', 'Helms'];
 
+    // Try gpt-3.5-turbo first as it's often more reliable for structured JSON
     const response = await client.chat.completions.create({
-      model: 'gpt-4o',
-      temperature: 0.2,
+      model: 'gpt-3.5-turbo',
+      temperature: 0.1, // Lower temperature for more consistent JSON
       response_format: { type: 'json_object' },
-      stream: false, // Ensure this line is added
+      stream: false,
+      max_tokens: 16000, // Limit tokens to prevent truncation
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `User profile:\n${userProfile}\nProgram id: ${programId}\nCitations to include in metadata.source: ${citations.join(', ')}` }
+        { role: 'user', content: `Generate a 12-week program for: ${input.experience_level} lifter, ${input.training_frequency_preference} days/week, ${input.session_length_min} min sessions. Program ID: ${programId}` }
       ]
     } as OpenAI.Chat.ChatCompletionCreateParams);
 
