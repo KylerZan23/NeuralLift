@@ -170,22 +170,24 @@ SCIENTIFIC BASIS:
 - Respect recovery needs and adaptation timelines
 
 CRITICAL JSON SCHEMA REQUIREMENTS:
+- MUST generate ALL 12 weeks (exactly 12 week objects in "weeks" array)
 - ALL fields must be exactly as specified below
 - "paid" MUST be boolean (true/false), never string
-- "week_number" MUST be integer 1-12
+- "week_number" MUST be integer 1-12 
 - "day_number" MUST be integer 1-7
 - "sets" MUST be integer (1-8), never string
 - "rpe" MUST be integer (5-10), never string
 - "rest_seconds" MUST be exactly 180 (integer)
 - "reps" MUST be string format like "8-12" or "10"
 - "tempo" MUST be string (can be empty "")
-- "notes" can be string or null
+- "notes" MUST be string (use "" for empty, never null)
 - "created_at" MUST be ISO format: "2025-01-01T00:00:00.000Z"
 - "source" MUST be array of strings
 - "volume_profile" MUST be object (can be empty {})
 - "big3_prs" MUST be object (can be empty {})
+- DO NOT include "user_id" field anywhere
 
-EXACT OUTPUT FORMAT (copy this structure exactly):
+EXACT OUTPUT FORMAT (generate ALL 12 weeks like this):
 {
   "program_id": "string",
   "name": "string", 
@@ -196,11 +198,32 @@ EXACT OUTPUT FORMAT (copy this structure exactly):
       "days": [
         {
           "day_number": 1,
-          "focus": "string",
-          "notes": null,
+          "focus": "Upper Body",
+          "notes": "",
           "exercises": [
             {
               "id": "bench-press-001",
+              "name": "Barbell Bench Press",
+              "sets": 4,
+              "reps": "6-8",
+              "rpe": 7,
+              "tempo": "",
+              "rest_seconds": 180
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "week_number": 2,
+      "days": [
+        {
+          "day_number": 1,
+          "focus": "Upper Body",
+          "notes": "",
+          "exercises": [
+            {
+              "id": "bench-press-002",
               "name": "Barbell Bench Press",
               "sets": 4,
               "reps": "6-8",
@@ -221,6 +244,8 @@ EXACT OUTPUT FORMAT (copy this structure exactly):
     "experience_level": "Intermediate"
   }
 }
+
+IMPORTANT: The "weeks" array MUST contain exactly 12 week objects (week_number 1 through 12). Do not generate only 1 week!
 `;
 
 // Helpers for session constraints and content hygiene
@@ -828,9 +853,23 @@ export async function generateProgramWithLLM(
         prepared = enforceDaysSplit(prepared, input);
         prepared = applySessionConstraints(prepared, input);
         
+        // Clean program for schema validation (remove user_id and fix notes)
+        const { user_id: _, ...cleanProgram } = prepared as Program & { user_id?: string };
+        const schemaValidProgram = {
+          ...cleanProgram,
+          weeks: cleanProgram.weeks?.map(week => ({
+            ...week,
+            days: week.days?.map(day => ({
+              ...day,
+              notes: day.notes ?? "" // Schema expects string, not null
+            }))
+          }))
+        };
+        
         // Validate the program against schema
-        const isValid = validateProgram(prepared);
+        const isValid = validateProgram(schemaValidProgram);
         if (isValid) {
+          // Return the original program with user_id for further processing
           return prepared as Program;
         }
         
@@ -850,8 +889,21 @@ export async function generateProgramWithLLM(
             experience_level: input.experience_level
           };
           
+          // Clean repaired program for validation  
+          const { user_id: __, ...cleanRepaired } = final as Program & { user_id?: string };
+          const schemaValidRepaired = {
+            ...cleanRepaired,
+            weeks: cleanRepaired.weeks?.map(week => ({
+              ...week,
+              days: week.days?.map(day => ({
+                ...day,
+                notes: day.notes ?? "" // Schema expects string, not null
+              }))
+            }))
+          };
+          
           // Validate repaired program
-          const isRepairedValid = validateProgram(final);
+          const isRepairedValid = validateProgram(schemaValidRepaired);
           if (isRepairedValid) {
             console.log(`✅ [generateProgramWithLLM] Successfully repaired program on attempt ${attempts + 1}`);
             return final as Program;
