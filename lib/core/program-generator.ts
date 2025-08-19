@@ -50,14 +50,7 @@ function ensureMetadata(p: Program): Program {
   return p;
 }
 
-function toProgramOrThrow(p: unknown): Program {
-  const ok = validateProgram(p);
-  if (!ok) {
-    const errs = JSON.stringify(validateProgram.errors ?? []);
-    throw new Error(`Program failed schema validation: ${errs}`);
-  }
-  return p as Program;
-}
+
 
 async function repairWithModel(raw: string, errors: ErrorObject[]): Promise<string | null> {
   if (!process.env.OPENAI_API_KEY) return null;
@@ -110,29 +103,108 @@ function buildUserProfile(input: OnboardingInput): string {
 }
 
 const systemPrompt = `
-You are an evidence-based strength coach. Generate a 12-week program as strict JSON conforming to the given schema fields and constraints below. Return JSON only.
+You are an expert evidence-based strength coach specializing in hypertrophy training. Generate a comprehensive 12-week program as strict JSON conforming to the given schema. Return ONLY valid JSON.
 
-Constraints (must follow):
-- 12 weeks total; each week has 2–6 days based on user.training_frequency_preference.
-- Exercise ordering: compounds first, then compound variations, then accessories.
-- Weekly effective sets per muscle by experience:
-  Beginner: 10–14; Intermediate: 14–18; Advanced: 18–26. Stay within ranges.
-- Rep ranges: main lifts 6–12 (emphasis 8–12); accessories 8–20.
-- Deload: 3:1 accumulation-to-deload cycle. Deload week reduces sets (~40%) and intensity.
-  - RPE 5-10 for data storage (displayed as RIR 0-1 in UI). Sets 1–8. No intensity_pct display.
-  - Rest_seconds: 180 seconds (3 minutes) for all exercises.
-  - Session length dictates number of exercises per day (strict): 30 min → 4, 45 min → 5, 60 min → 6, 90 min → 7.
-- Tailor exercise selection to equipment, injuries, and movement prefs. Prefer barbell/dumbbell/cable basics; avoid risky variants where injuries conflict.
-- Personalize split based on days/week: 2=Full Body; 3=Upper/Lower/Full; 4=Upper/Lower/Upper/Lower; 5=Push/Pull/Legs/Upper/Lower; 6=Push/Pull/Legs/Upper/Lower/Focus.
-- Provide notes sparingly for technique/progression. Use consistent tempo strings and RPE guidance.
-- Populate metadata.created_at, metadata.source (strings, e.g., research/authors), metadata.volume_profile (per muscle weekly set counts as integers).
+MANDATORY CONSTRAINTS (NEVER VIOLATE):
+- 12 weeks total; training days per week based on user preference (2-6 days)
+- Exercise hierarchy: compound movements first, compound variations second, accessories last
+- Weekly effective sets per muscle group by experience level:
+  * Beginner: 10-14 sets
+  * Intermediate: 14-18 sets  
+  * Advanced: 18-26 sets
+- Rep ranges STRICTLY: main lifts 6-12 reps (emphasis 8-12); accessories 8-20 reps
+- Progressive overload: 3:1 accumulation-to-deload cycle (weeks 1-3 accumulate, week 4 deload)
+- Deload weeks: reduce sets by ~40% and intensity
+- RPE scale: 5-10 (displayed as RIR 0-5 in UI)
+- Rest periods: 180 seconds for ALL exercises
+- Session constraints: 30min→4 exercises, 45min→5 exercises, 60min→6 exercises, 90min→7 exercises
 
-Methodology:
-- Ground decisions in modern hypertrophy literature (e.g., Schoenfeld volume recommendations, progressive overload, MRV, MEV) and popular science-based creators (Jeff Nippard style periodization, autoregulated RPE).
-- Ensure progressive overload across accumulation weeks; then deload. Keep intensity and volume realistic for user's experience.
+EXERCISE SELECTION RULES:
+- Prioritize barbell, dumbbell, and cable movements over machines
+- Avoid high-risk exercises for beginners
+- Substitute exercises based on available equipment
+- Respect injury limitations and movement preferences
+- Include compound movements: squat, deadlift, bench press, overhead press, rows
+- Balance muscle groups across the week
 
-Output must exactly match keys and types in the program schema:
-- program_id (string), name (string), paid (boolean), weeks [{week_number, days: [{day_number, focus, exercises: [{id, name, sets, reps, rpe, tempo, rest_seconds}], notes?}]}], metadata { created_at, source[], volume_profile{} }.
+SPLIT RECOMMENDATIONS:
+- 2 days: Full body both sessions
+- 3 days: Upper/Lower/Full body
+- 4 days: Upper/Lower/Upper/Lower
+- 5 days: Push/Pull/Legs/Upper/Lower
+- 6 days: Push/Pull/Legs/Upper/Lower/Focus
+
+PERSONALIZATION REQUIREMENTS:
+- Consider user's experience level for exercise complexity
+- Adapt volume based on training frequency
+- Account for session length constraints
+- Tailor exercises to available equipment
+- Avoid contraindicated movements for injuries
+- Focus on user's preferred muscle groups when specified
+
+PROGRESSION STRATEGY:
+- Week 1: Baseline intensity and volume
+- Week 2: Slight increase in volume or intensity
+- Week 3: Peak accumulation week
+- Week 4: Deload (reduce sets by 40%, maintain weight)
+- Repeat cycle for weeks 5-8 and 9-12
+- Progressive overload through increased weight, reps, or sets
+
+EXERCISE NOTES:
+- Provide technique cues for compound movements
+- Include progression strategies
+- Mention tempo when relevant (e.g., "2-1-2-1")
+- Keep notes concise and actionable
+
+METADATA REQUIREMENTS:
+- Source: Include research references and evidence-based practitioners
+- Volume profile: Calculate weekly sets per muscle group
+- Created timestamp: Use ISO format
+- Track user's PRs and experience level in metadata
+
+SCIENTIFIC BASIS:
+- Follow Schoenfeld volume recommendations
+- Apply progressive overload principles
+- Use autoregulated RPE for intensity prescription
+- Implement evidence-based exercise selection
+- Respect recovery needs and adaptation timelines
+
+OUTPUT FORMAT:
+{
+  "program_id": "string",
+  "name": "string", 
+  "paid": boolean,
+  "weeks": [
+    {
+      "week_number": number,
+      "days": [
+        {
+          "day_number": number,
+          "focus": "string",
+          "notes": "string or null",
+          "exercises": [
+            {
+              "id": "string",
+              "name": "string",
+              "sets": number,
+              "reps": "string",
+              "rpe": number,
+              "tempo": "string",
+              "rest_seconds": 180
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created_at": "ISO string",
+    "source": ["array of strings"],
+    "volume_profile": {},
+    "big3_prs": {},
+    "experience_level": "string"
+  }
+}
 `;
 
 // Helpers for session constraints and content hygiene
@@ -695,16 +767,7 @@ export async function generateProgramWithLLM(
 ): Promise<Program> {
   const programId = opts?.programId ?? crypto.randomUUID();
   if (!process.env.OPENAI_API_KEY) {
-    const weeks = generateFullProgram(input);
-    const fallback: Program = {
-      program_id: programId,
-      name: '12-week Hypertrophy Program',
-      paid: false,
-      weeks,
-      metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {}, big3_prs: input.big3_PRs ?? {}, experience_level: input.experience_level }
-    } as Program;
-    if (opts?.userId) fallback.user_id = opts.userId;
-    return fallback;
+    throw new Error('OpenAI API key is required for program generation. Please configure OPENAI_API_KEY environment variable.');
   }
   try {
     const { OpenAI } = await import('openai');
@@ -732,47 +795,72 @@ export async function generateProgramWithLLM(
     const jsonStart = text.indexOf('{');
     const jsonEnd = text.lastIndexOf('}');
     if (jsonStart < 0 || jsonEnd <= jsonStart) throw new Error('No JSON in response');
-    try {
-      const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as Program;
-      let prepared = ensureMetadata(coerceProgramId(parsed, programId));
-      if (opts?.userId) prepared.user_id = opts.userId;
-      prepared.metadata = {
-        ...prepared.metadata,
-        big3_prs: input.big3_PRs ?? {},
-        experience_level: input.experience_level
-      };
-      prepared = enforceDaysSplit(prepared, input);
-      prepared = applySessionConstraints(prepared, input);
-      return toProgramOrThrow(prepared);
-    } catch {
-      const repaired = await repairWithModel(JSON.stringify(JSON.parse(text.slice(jsonStart, jsonEnd + 1))), validateProgram.errors ?? []);
-      if (repaired) {
-        const reparsed = JSON.parse(repaired) as Program;
-        let final = ensureMetadata(coerceProgramId(reparsed, programId));
-        if (opts?.userId) final.user_id = opts.userId;
-        final = enforceDaysSplit(final, input);
-        final = applySessionConstraints(final, input);
-        final.metadata = {
-          ...final.metadata,
+    // Attempt to parse and validate the AI response
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      try {
+        const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as Program;
+        let prepared = ensureMetadata(coerceProgramId(parsed, programId));
+        if (opts?.userId) prepared.user_id = opts.userId;
+        prepared.metadata = {
+          ...prepared.metadata,
           big3_prs: input.big3_PRs ?? {},
           experience_level: input.experience_level
         };
-        return toProgramOrThrow(final);
+        prepared = enforceDaysSplit(prepared, input);
+        prepared = applySessionConstraints(prepared, input);
+        
+        // Validate the program against schema
+        const isValid = validateProgram(prepared);
+        if (isValid) {
+          return prepared as Program;
+        }
+        
+        // If validation fails, try to repair
+        console.log(`⚠️ [generateProgramWithLLM] Validation failed on attempt ${attempts + 1}, trying repair...`);
+        const repaired = await repairWithModel(JSON.stringify(prepared), validateProgram.errors ?? []);
+        if (repaired) {
+          const reparsed = JSON.parse(repaired) as Program;
+          let final = ensureMetadata(coerceProgramId(reparsed, programId));
+          if (opts?.userId) final.user_id = opts.userId;
+          final = enforceDaysSplit(final, input);
+          final = applySessionConstraints(final, input);
+          final.metadata = {
+            ...final.metadata,
+            big3_prs: input.big3_PRs ?? {},
+            experience_level: input.experience_level
+          };
+          
+          // Validate repaired program
+          const isRepairedValid = validateProgram(final);
+          if (isRepairedValid) {
+            console.log(`✅ [generateProgramWithLLM] Successfully repaired program on attempt ${attempts + 1}`);
+            return final as Program;
+          }
+        }
+        
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw new Error(`Failed to generate valid program after ${maxAttempts} attempts`);
+        }
+        
+      } catch (parseError) {
+        attempts++;
+        console.log(`⚠️ [generateProgramWithLLM] Parse error on attempt ${attempts}: ${parseError}`);
+        if (attempts >= maxAttempts) {
+          throw new Error(`Failed to parse AI response after ${maxAttempts} attempts: ${parseError}`);
+        }
       }
-      throw new Error('Repair failed');
     }
-  } catch {
-    const weeks = generateFullProgram(input);
-    const fallback: Program = {
-      program_id: programId,
-      name: '12-week Hypertrophy Program',
-      paid: false,
-      weeks,
-      metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {}, big3_prs: input.big3_PRs ?? {}, experience_level: input.experience_level }
-    } as Program;
-    if (opts?.userId) fallback.user_id = opts.userId;
-    return fallback;
+  } catch (error) {
+    console.error('❌ [generateProgramWithLLM] AI generation failed:', error);
+    throw new Error(`AI program generation failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
   }
+  
+  // This should never be reached due to the throw statements above
+  throw new Error('Failed to generate program after all attempts');
 }
 
 export async function saveProgramToSupabase(): Promise<void> {

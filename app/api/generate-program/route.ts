@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { OnboardingInput, generateFullProgram, generateProgramWithLLM } from '@/lib/core/program-generator';
+import { OnboardingInput, generateProgramWithLLM } from '@/lib/core/program-generator';
 import Ajv, { type Schema } from 'ajv';
 import addFormats from 'ajv-formats';
 import programSchema from '@/types/program.schema.json';
@@ -30,16 +30,22 @@ export async function GET(req: NextRequest) {
     session_length_min: 60
   });
 
-  const weeks = generateFullProgram(input);
-  const program: Program = {
-    program_id: id,
-    name: '12-week Hypertrophy Program',
-    paid: false,
-    weeks,
-    metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {} }
-  };
-
-  return NextResponse.json(program, { status: 200 });
+  try {
+    console.log('🧠 [generate-program-GET] Generating demo program with AI');
+    const program = await generateProgramWithLLM(input, { 
+      programId: id, 
+      citations: ['Schoenfeld', 'Nuckols', 'Jeff Nippard', 'Mike Israetel'] 
+    });
+    console.log('✅ [generate-program-GET] Demo program generated successfully');
+    return NextResponse.json(program, { status: 200 });
+  } catch (error) {
+    console.error('❌ [generate-program-GET] Demo program generation failed:', error);
+    return NextResponse.json({ 
+      error: 'Demo program generation failed', 
+      details: error instanceof Error ? error.message : 'Unknown error',
+      suggestion: 'Please ensure OpenAI API key is configured.'
+    }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -100,25 +106,16 @@ export async function POST(req: NextRequest) {
 
   let program: Program;
   try {
-    if (gpt) {
-      console.log('🧠 [generate-program] Using LLM for generation');
-      program = await generateProgramWithLLM(input, { programId, citations: body.citations ?? [], userId: user.id });
-      console.log('✅ [generate-program] LLM generation completed');
-    } else {
-      console.log('📊 [generate-program] Using deterministic generation');
-      const base: Program = {
-        program_id: programId,
-        name: '12-week Hypertrophy Program',
-        paid: false,
-        weeks: generateFullProgram(input),
-        metadata: { created_at: new Date().toISOString(), source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], volume_profile: {} }
-      };
-      program = base;
-      console.log('✅ [generate-program] Deterministic generation completed');
-    }
+    console.log('🧠 [generate-program] Using AI for program generation');
+    program = await generateProgramWithLLM(input, { programId, citations: body.citations ?? [], userId: user.id });
+    console.log('✅ [generate-program] AI generation completed successfully');
   } catch (error) {
-    console.error('❌ [generate-program] Program generation failed:', error);
-    return NextResponse.json({ error: 'Program generation failed', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+    console.error('❌ [generate-program] AI program generation failed:', error);
+    return NextResponse.json({ 
+      error: 'AI program generation failed', 
+      details: error instanceof Error ? error.message : 'Unknown error',
+      suggestion: 'Please ensure OpenAI API key is configured and try again.'
+    }, { status: 500 });
   }
   console.log('🔍 [generate-program] Preparing program for validation');
   
