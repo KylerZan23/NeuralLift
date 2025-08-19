@@ -79,28 +79,7 @@ async function repairWithModel(raw: string, errors: ErrorObject[]): Promise<stri
   }
 }
 
-function buildUserProfile(input: OnboardingInput): string {
-  const goals = (input.goals ?? []).join(', ');
-  const eq = (input.equipment_available ?? []).join(', ');
-  const prefs = (input.movement_preferences ?? []).join(', ');
-  const inj = (input.injuries ?? []).join(', ');
-  const pr = input.big3_PRs ?? {};
-  const focus = input.focus_point ? `Focus: ${input.focus_point}.` : '';
-  return [
-    `Experience: ${input.experience_level}.`,
-    `Training days/week: ${input.training_frequency_preference}.`,
-    `Session length: ${input.session_length_min} min.`,
-    `Goals: ${goals || 'hypertrophy'}.`,
-    `Equipment: ${eq || 'Gym'}.`,
-    `Preferred split: ${input.preferred_split ?? 'auto'}.`,
-    `Rest preference: ${input.rest_pref}.`,
-    `Nutrition: ${input.nutrition}.`,
-    `PRs (lbs): bench=${pr.bench ?? 'n/a'}, squat=${pr.squat ?? 'n/a'}, deadlift=${pr.deadlift ?? 'n/a'}.`,
-    `Injuries: ${inj || 'none'}.`,
-    `Movement prefs: ${prefs || 'none'}.`,
-    focus
-  ].join(' ');
-}
+
 
 const systemPrompt = `
 You are an expert evidence-based strength coach. Generate a 12-week hypertrophy program as valid JSON.
