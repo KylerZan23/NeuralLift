@@ -26,5 +26,7 @@ Adopt an LLM-first generator using OpenAI to synthesize a full 12-week plan from
 - Function calling with strict schema (available later; current approach uses `response_format: json_object`).
 
 ## Notes
-- Model: `gpt-4o` selected for higher reliability on structured JSON output.
+- Model: Initially `gpt-4o`, switched to `gpt-3.5-turbo` for cost optimization
+- Token limit: Set to 4096 tokens (GPT-3.5-turbo's maximum completion tokens)
+- **2025-08-19 Update**: Fixed token limit error by reducing max_tokens from 16000 to 4096 to comply with GPT-3.5-turbo constraints
 

@@ -792,7 +792,7 @@ export async function generateProgramWithLLM(
       temperature: 0.1, // Lower temperature for more consistent JSON
       response_format: { type: 'json_object' },
       stream: false,
-      max_tokens: 16000, // Limit tokens to prevent truncation
+      max_tokens: 4096, // GPT-3.5-turbo maximum completion tokens
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Generate a 12-week program for: ${input.experience_level} lifter, ${input.training_frequency_preference} days/week, ${input.session_length_min} min sessions. Program ID: ${programId}` }
