@@ -2,8 +2,21 @@ import { z } from 'zod';
 import Ajv, { type ErrorObject, type Schema } from 'ajv';
 import addFormats from 'ajv-formats';
 import programSchema from '@/types/program.schema.json';
-import type { Program, Day } from '@/types/program';
+import type { Program, Day, Week } from '@/types/program';
 import OpenAI from 'openai';
+import { LIFTING_PRINCIPLES } from './knowledge-base';
+import { getLLMClient } from './llm-client';
+
+const HighLevelPlanSchema = z.object({
+  programName: z.string().describe("A creative, motivating name for the 12-week program."),
+  weeks: z.array(z.object({
+    week_number: z.number().int().min(1).max(12),
+    focus: z.string().describe("The primary focus for this week, e.g., 'Hypertrophy Accumulation 1', 'Strength Introduction', 'Deload & Recovery'."),
+    notes: z.string().describe("A brief, motivating note for the user about the goal of this week's training.")
+  })).length(12)
+});
+
+export type HighLevelPlan = z.infer<typeof HighLevelPlanSchema>;
 
 export const OnboardingInput = z.object({
   id: z.string().optional(),
@@ -52,32 +65,7 @@ function ensureMetadata(p: Program): Program {
 
 
 
-async function repairWithModel(raw: string, errors: ErrorObject[]): Promise<string | null> {
-  if (!process.env.OPENAI_API_KEY) return null;
-  try {
-    const { OpenAI } = await import('openai');
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const response = await client.chat.completions.create({
-      model: 'gpt-4o',
-      temperature: 0.1,
-      response_format: { type: 'json_object' },
-      stream: false, // Ensure this line is added
-      messages: [
-        { role: 'system', content: 'You return strictly valid JSON matching the provided schema. No prose.' },
-        { role: 'user', content: `Fix this program JSON to pass the schema. Only return corrected JSON.\nErrors:\n${JSON.stringify(errors)}\nJSON:\n${raw}` }
-      ]
-    } as OpenAI.Chat.ChatCompletionCreateParams);
-    
-    // Check if it's a non-streaming response
-    if ('choices' in response) {
-      const text = response.choices?.[0]?.message?.content;
-      return text ?? null;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
+
 
 function buildUserProfile(input: OnboardingInput): string {
   const goals = (input.goals ?? []).join(', ');
@@ -102,160 +90,23 @@ function buildUserProfile(input: OnboardingInput): string {
   ].join(' ');
 }
 
-const systemPrompt = `
-You are an expert evidence-based strength coach specializing in hypertrophy training. Generate a comprehensive 12-week program as strict JSON conforming to the given schema. 
+function retrieveRelevantPrinciples(input: OnboardingInput): string {
+  const inputKeywords = new Set([
+    input.experience_level.toLowerCase(),
+    ...input.goals,
+    `${input.training_frequency_preference}_days`
+  ]);
 
-CRITICAL: Return ONLY valid, well-formed JSON. Ensure proper comma placement, no trailing commas, and complete JSON structure.
+  const relevantPrinciples = LIFTING_PRINCIPLES.filter(p =>
+    p.keywords.some(k => inputKeywords.has(k))
+  );
 
-MANDATORY CONSTRAINTS (NEVER VIOLATE):
-- 12 weeks total; training days per week based on user preference (2-6 days)
-- Exercise hierarchy: compound movements first, compound variations second, accessories last
-- Weekly effective sets per muscle group by experience level:
-  * Beginner: 10-14 sets
-  * Intermediate: 14-18 sets  
-  * Advanced: 18-26 sets
-- Rep ranges STRICTLY: main lifts 6-12 reps (emphasis 8-12); accessories 8-20 reps
-- Progressive overload: 3:1 accumulation-to-deload cycle (weeks 1-3 accumulate, week 4 deload)
-- Deload weeks: reduce sets by ~40% and intensity
-- RPE scale: 5-10 (displayed as RIR 0-5 in UI)
-- Rest periods: 180 seconds for ALL exercises
-- Session constraints: 30min→4 exercises, 45min→5 exercises, 60min→6 exercises, 90min→7 exercises
+  if (relevantPrinciples.length === 0) return "";
 
-EXERCISE SELECTION RULES:
-- Prioritize barbell, dumbbell, and cable movements over machines
-- Avoid high-risk exercises for beginners
-- Substitute exercises based on available equipment
-- Respect injury limitations and movement preferences
-- Include compound movements: squat, deadlift, bench press, overhead press, rows
-- Balance muscle groups across the week
-
-SPLIT RECOMMENDATIONS:
-- 2 days: Full body both sessions
-- 3 days: Upper/Lower/Full body
-- 4 days: Upper/Lower/Upper/Lower
-- 5 days: Push/Pull/Legs/Upper/Lower
-- 6 days: Push/Pull/Legs/Upper/Lower/Focus
-
-PERSONALIZATION REQUIREMENTS:
-- Consider user's experience level for exercise complexity
-- Adapt volume based on training frequency
-- Account for session length constraints
-- Tailor exercises to available equipment
-- Avoid contraindicated movements for injuries
-- Focus on user's preferred muscle groups when specified
-
-PROGRESSION STRATEGY:
-- Week 1: Baseline intensity and volume
-- Week 2: Slight increase in volume or intensity
-- Week 3: Peak accumulation week
-- Week 4: Deload (reduce sets by 40%, maintain weight)
-- Repeat cycle for weeks 5-8 and 9-12
-- Progressive overload through increased weight, reps, or sets
-
-EXERCISE NOTES:
-- Provide technique cues for compound movements
-- Include progression strategies
-- Mention tempo when relevant (e.g., "2-1-2-1")
-- Keep notes concise and actionable
-
-METADATA REQUIREMENTS:
-- Source: Include research references and evidence-based practitioners
-- Volume profile: Calculate weekly sets per muscle group
-- Created timestamp: Use ISO format
-- Track user's PRs and experience level in metadata
-
-SCIENTIFIC BASIS:
-- Follow Schoenfeld volume recommendations
-- Apply progressive overload principles
-- Use autoregulated RPE for intensity prescription
-- Implement evidence-based exercise selection
-- Respect recovery needs and adaptation timelines
-
-CRITICAL JSON SCHEMA REQUIREMENTS:
-- MUST generate ALL 12 weeks (exactly 12 week objects in "weeks" array)
-- ALL fields must be exactly as specified below
-- "paid" MUST be boolean (true/false), never string
-- "week_number" MUST be integer 1-12 
-- "day_number" MUST be integer 1-7
-- "sets" MUST be integer (1-8), never string
-- "rpe" MUST be integer (5-10), never string
-- "rest_seconds" MUST be exactly 180 (integer)
-- "reps" MUST be string format like "8-12" or "10"
-- "tempo" MUST be string (can be empty "")
-- "notes" MUST be string (use "" for empty, never null)
-- "created_at" MUST be ISO format: "2025-01-01T00:00:00.000Z"
-- "source" MUST be array of strings
-- "volume_profile" MUST be object (can be empty {})
-- "big3_prs" MUST be object (can be empty {})
-- DO NOT include "user_id" field anywhere
-
-EXACT OUTPUT FORMAT (generate ALL 12 weeks like this):
-{
-  "program_id": "string",
-  "name": "string", 
-  "paid": false,
-  "weeks": [
-    {
-      "week_number": 1,
-      "days": [
-        {
-          "day_number": 1,
-          "focus": "Upper Body",
-          "notes": "",
-          "exercises": [
-            {
-              "id": "bench-press-001",
-              "name": "Barbell Bench Press",
-              "sets": 4,
-              "reps": "6-8",
-              "rpe": 7,
-              "tempo": "",
-              "rest_seconds": 180
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "week_number": 2,
-      "days": [
-        {
-          "day_number": 1,
-          "focus": "Upper Body",
-          "notes": "",
-          "exercises": [
-            {
-              "id": "bench-press-002",
-              "name": "Barbell Bench Press",
-              "sets": 4,
-              "reps": "6-8",
-              "rpe": 7,
-              "tempo": "",
-              "rest_seconds": 180
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  "metadata": {
-    "created_at": "2025-08-19T06:00:00.000Z",
-    "source": ["Schoenfeld", "Jeff Nippard", "Mike Israetel"],
-    "volume_profile": {},
-    "big3_prs": {},
-    "experience_level": "Intermediate"
-  }
+  return "Consider these guiding principles:\n" + relevantPrinciples.map(p => `- ${p.topic}: ${p.content}`).join("\n");
 }
 
-CRITICAL JSON SYNTAX RULES:
-- The "weeks" array MUST contain exactly 12 week objects (week_number 1 through 12)
-- NEVER use trailing commas after the last element in arrays or objects
-- ALWAYS use double quotes for strings, never single quotes
-- ENSURE all opening braces { have closing braces }
-- ENSURE all opening brackets [ have closing brackets ]
-- COMPLETE the entire JSON structure before stopping
-- NO TEXT outside the JSON object
-`;
+
 
 // Helpers for session constraints and content hygiene
 const CORE_EXERCISES = ['Cable Crunch', 'Hanging Leg Raise'] as const;
@@ -816,188 +667,75 @@ export async function generateProgramWithLLM(
   opts?: { programId?: string; citations?: string[]; userId?: string }
 ): Promise<Program> {
   const programId = opts?.programId ?? crypto.randomUUID();
+  
   if (!process.env.OPENAI_API_KEY) {
     throw new Error('OpenAI API key is required for program generation. Please configure OPENAI_API_KEY environment variable.');
   }
+
   try {
-    const { OpenAI } = await import('openai');
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const userProfile = buildUserProfile(input);
+    console.log('🎯 [generateProgramWithLLM] Starting two-phase AI program generation...');
+    
+    // Model configuration for cost and performance optimization
+    const PLANNER_MODEL = 'gpt-4o'; // High-quality planning model
+    const WORKER_MODEL = 'gpt-4o';  // Fast, efficient worker model
+    
+    // Phase 1: Generate high-level plan
+    console.log('📋 [generateProgramWithLLM] Phase 1: Generating high-level mesocycle plan...');
+    const highLevelPlan = await generateHighLevelPlan(input, PLANNER_MODEL);
+    console.log(`✅ [generateProgramWithLLM] Generated plan: "${highLevelPlan.programName}"`);
+
+    // Phase 2: Generate detailed weeks in parallel
+    console.log('⚙️ [generateProgramWithLLM] Phase 2: Generating detailed weeks in parallel...');
+    const weekPromises = highLevelPlan.weeks.map(highLevelWeek => 
+      generateDetailedWeek(input, highLevelWeek, WORKER_MODEL)
+    );
+    
+    const detailedWeeks = await Promise.all(weekPromises);
+    console.log('✅ [generateProgramWithLLM] All 12 weeks generated successfully');
+
+    // Phase 3: Assemble final program
+    console.log('🔧 [generateProgramWithLLM] Phase 3: Assembling final program...');
     const citations = opts?.citations ?? ['Schoenfeld', 'Nuckols', 'Jeff Nippard', 'Mike Israetel', 'Helms'];
-
-    const response = await client.chat.completions.create({
-      model: 'gpt-4o',
-      temperature: 0.2,
-      response_format: { type: 'json_object' },
-      stream: false, // Ensure this line is added
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `User profile:\n${userProfile}\nProgram id: ${programId}\nCitations to include in metadata.source: ${citations.join(', ')}` }
-      ]
-    } as OpenAI.Chat.ChatCompletionCreateParams);
-
-    // Check if it's a non-streaming response
-    if (!('choices' in response)) {
-      throw new Error('Received streaming response when expecting non-streaming');
-    }
-
-    const text = response.choices?.[0]?.message?.content ?? '';
     
-    // Find JSON boundaries more carefully
-    const jsonStart = text.indexOf('{');
-    const jsonEnd = text.lastIndexOf('}');
-    if (jsonStart < 0 || jsonEnd <= jsonStart) throw new Error('No JSON in response');
-    
-    // Extract potential JSON
-    let rawJson = text.slice(jsonStart, jsonEnd + 1);
-    
-    // Basic JSON cleanup for common AI errors
-    try {
-      // Remove any trailing commas before closing braces/brackets
-      rawJson = rawJson.replace(/,(\s*[}\]])/g, '$1');
-      // Ensure proper escaping of quotes in strings
-      rawJson = rawJson.replace(/(?<!\\)"/g, '"');
-      // Basic validation that it's complete JSON
-      if (!rawJson.endsWith('}')) {
-        throw new Error('Incomplete JSON structure');
+    let program: Program = {
+      program_id: programId,
+      name: highLevelPlan.programName,
+      paid: false,
+      weeks: detailedWeeks,
+      metadata: {
+        created_at: new Date().toISOString(),
+        source: citations,
+        volume_profile: {},
+        big3_prs: input.big3_PRs ?? {},
+        experience_level: input.experience_level,
+        generation_method: 'two_phase_ai'
       }
-    } catch (cleanupError) {
-      console.log(`⚠️ [generateProgramWithLLM] JSON cleanup failed: ${cleanupError}`);
+    };
+
+    // Add user_id if provided
+    if (opts?.userId) {
+      program.user_id = opts.userId;
     }
-    // Attempt to parse and validate the AI response
-    let attempts = 0;
-    const maxAttempts = 3;
-    
-    while (attempts < maxAttempts) {
-      try {
-        const parsed = JSON.parse(rawJson) as Program;
-        let prepared = ensureMetadata(coerceProgramId(parsed, programId));
-        if (opts?.userId) prepared.user_id = opts.userId;
-        prepared.metadata = {
-          ...prepared.metadata,
-          big3_prs: input.big3_PRs ?? {},
-          experience_level: input.experience_level
-        };
-        prepared = enforceDaysSplit(prepared, input);
-        prepared = applySessionConstraints(prepared, input);
-        
-        // Clean program for schema validation (remove user_id and fix notes)
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { user_id: _, ...cleanProgram } = prepared as Program & { user_id?: string };
-        const schemaValidProgram = {
-          ...cleanProgram,
-          weeks: cleanProgram.weeks?.map(week => ({
-            ...week,
-            days: week.days?.map(day => ({
-              ...day,
-              notes: day.notes ?? "" // Schema expects string, not null
-            }))
-          }))
-        };
-        
-        // Validate the program against schema
-        const isValid = validateProgram(schemaValidProgram);
-        if (isValid) {
-          // Return the original program with user_id for further processing
-          return prepared as Program;
-        }
-        
-        // If validation fails, try to repair
-        console.log(`⚠️ [generateProgramWithLLM] Validation failed on attempt ${attempts + 1}, trying repair...`);
-        console.log(`🔍 [generateProgramWithLLM] Validation errors:`, JSON.stringify(validateProgram.errors, null, 2));
-        const repaired = await repairWithModel(JSON.stringify(prepared), validateProgram.errors ?? []);
-        if (repaired) {
-          const reparsed = JSON.parse(repaired) as Program;
-          let final = ensureMetadata(coerceProgramId(reparsed, programId));
-          if (opts?.userId) final.user_id = opts.userId;
-          final = enforceDaysSplit(final, input);
-          final = applySessionConstraints(final, input);
-          final.metadata = {
-            ...final.metadata,
-            big3_prs: input.big3_PRs ?? {},
-            experience_level: input.experience_level
-          };
-          
-          // Clean repaired program for validation  
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { user_id: __, ...cleanRepaired } = final as Program & { user_id?: string };
-          const schemaValidRepaired = {
-            ...cleanRepaired,
-            weeks: cleanRepaired.weeks?.map(week => ({
-              ...week,
-              days: week.days?.map(day => ({
-                ...day,
-                notes: day.notes ?? "" // Schema expects string, not null
-              }))
-            }))
-          };
-          
-          // Validate repaired program
-          const isRepairedValid = validateProgram(schemaValidRepaired);
-          if (isRepairedValid) {
-            console.log(`✅ [generateProgramWithLLM] Successfully repaired program on attempt ${attempts + 1}`);
-            return final as Program;
-          }
-        }
-        
-        attempts++;
-        if (attempts >= maxAttempts) {
-          console.log(`❌ [generateProgramWithLLM] Failed after ${maxAttempts} attempts, falling back to deterministic generation`);
-          const weeks = generateFullProgram(input);
-          const fallback: Program = {
-            program_id: programId,
-            name: '12-week Hypertrophy Program (Validation Fallback)',
-            paid: false,
-            weeks,
-            metadata: { 
-              created_at: new Date().toISOString(), 
-              source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], 
-              volume_profile: {}, 
-              big3_prs: input.big3_PRs ?? {}, 
-              experience_level: input.experience_level,
-              fallback_reason: 'AI validation failed'
-            }
-          } as Program;
-          if (opts?.userId) fallback.user_id = opts.userId;
-          return fallback;
-        }
-        
-      } catch (parseError) {
-        attempts++;
-        console.log(`⚠️ [generateProgramWithLLM] Parse error on attempt ${attempts}: ${parseError}`);
-        if (attempts >= maxAttempts) {
-          console.log(`❌ [generateProgramWithLLM] Parse failed after ${maxAttempts} attempts, falling back to deterministic generation`);
-          const weeks = generateFullProgram(input);
-          const fallback: Program = {
-            program_id: programId,
-            name: '12-week Hypertrophy Program (Parse Fallback)',
-            paid: false,
-            weeks,
-            metadata: { 
-              created_at: new Date().toISOString(), 
-              source: ['science-refs', 'Jeff Nippard', 'TNF', 'Mike Israetel'], 
-              volume_profile: {}, 
-              big3_prs: input.big3_PRs ?? {}, 
-              experience_level: input.experience_level,
-              fallback_reason: 'AI parsing failed'
-            }
-          } as Program;
-          if (opts?.userId) fallback.user_id = opts.userId;
-          return fallback;
-        }
-      }
-    }
+
+    // Apply existing helper functions for final processing
+    program = ensureMetadata(program);
+    program = enforceDaysSplit(program, input);
+    program = applySessionConstraints(program, input);
+
+    console.log('🎉 [generateProgramWithLLM] Program generation completed successfully');
+    return program;
+
   } catch (error) {
-    console.error('❌ [generateProgramWithLLM] AI generation failed:', error);
+    console.error('❌ [generateProgramWithLLM] Two-phase AI generation failed:', error);
     
-    // Check if it's a quota/billing error and provide fallback
+    // Check for quota/billing errors and provide fallback
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('insufficient_quota')) {
       console.log('⚠️ [generateProgramWithLLM] Quota exceeded, falling back to deterministic generation');
       const weeks = generateFullProgram(input);
       const fallback: Program = {
         program_id: programId,
-        name: '12-week Hypertrophy Program (Fallback)',
+        name: '12-Week Hypertrophy Program (Fallback)',
         paid: false,
         weeks,
         metadata: { 
@@ -1006,7 +744,8 @@ export async function generateProgramWithLLM(
           volume_profile: {}, 
           big3_prs: input.big3_PRs ?? {}, 
           experience_level: input.experience_level,
-          fallback_reason: 'OpenAI quota exceeded'
+          fallback_reason: 'OpenAI quota exceeded',
+          generation_method: 'deterministic_fallback'
         }
       } as Program;
       if (opts?.userId) fallback.user_id = opts.userId;
@@ -1015,9 +754,6 @@ export async function generateProgramWithLLM(
     
     throw new Error(`AI program generation failed: ${errorMessage}. Please try again.`);
   }
-  
-  // This should never be reached due to the throw statements above
-  throw new Error('Failed to generate program after all attempts');
 }
 
 export async function saveProgramToSupabase(): Promise<void> {
@@ -1027,6 +763,347 @@ export async function saveProgramToSupabase(): Promise<void> {
 
 export function canViewWeek(week: number, paid: boolean) {
   return week <= 1 || paid;
+}
+
+export async function generateHighLevelPlan(input: OnboardingInput, modelName: string = 'gpt-4o'): Promise<HighLevelPlan> {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OpenAI API key is required for high-level plan generation. Please configure OPENAI_API_KEY environment variable.');
+  }
+
+  try {
+    const client = getLLMClient(modelName);
+
+    // Retrieve relevant principles based on user input
+    const relevantPrinciples = retrieveRelevantPrinciples(input);
+    const userProfile = buildUserProfile(input);
+    
+    const plannerPrompt = `Based on the user's profile and the following evidence-based principles, create a high-level 12-week plan.
+
+${relevantPrinciples}
+
+CRITICAL INSTRUCTIONS:
+- Return ONLY valid JSON matching the exact schema below
+- Create exactly 12 weeks (week_number 1-12)
+- Follow 3:1 accumulation-to-deload pattern: weeks 1-3 accumulate, week 4 deload, repeat 3 times
+- Consider the user's experience level, goals, and training frequency
+- Make the program name creative and motivating
+- Week focuses should progress logically through the mesocycle
+- Notes should be brief, motivating, and specific to that week's purpose
+- Ground your decisions in the provided evidence-based principles
+
+REQUIRED JSON SCHEMA:
+{
+  "programName": "string (creative, motivating name)",
+  "weeks": [
+    {
+      "week_number": 1,
+      "focus": "string (e.g., 'Hypertrophy Accumulation 1', 'Strength Introduction', 'Deload & Recovery')",
+      "notes": "string (brief motivating note about this week's training goal)"
+    }
+    // ... repeat for all 12 weeks
+  ]
+}
+
+EXAMPLE PROGRESSION PATTERNS:
+- Weeks 1-3: "Hypertrophy Accumulation 1-3" 
+- Week 4: "Deload & Recovery"
+- Weeks 5-7: "Strength-Hypertrophy Blend 1-3"
+- Week 8: "Active Recovery"
+- Weeks 9-11: "Peak Volume 1-3"
+- Week 12: "Transition & Assessment"
+
+User Profile: ${userProfile}`;
+
+    const response = await client.chat.completions.create({
+      model: modelName,
+      temperature: 0.3,
+      response_format: { type: 'json_object' },
+      stream: false,
+      messages: [
+        { role: 'system', content: 'You are a professional strength coach. Return only valid JSON conforming to the provided schema. No additional text.' },
+        { role: 'user', content: plannerPrompt }
+      ]
+    });
+
+    // Check if it's a non-streaming response
+    if (!('choices' in response)) {
+      throw new Error('Received streaming response when expecting non-streaming');
+    }
+
+    const text = response.choices?.[0]?.message?.content ?? '';
+    
+    // Find JSON boundaries
+    const jsonStart = text.indexOf('{');
+    const jsonEnd = text.lastIndexOf('}');
+    if (jsonStart < 0 || jsonEnd <= jsonStart) {
+      throw new Error('No valid JSON found in response');
+    }
+    
+    // Extract and parse JSON
+    let rawJson = text.slice(jsonStart, jsonEnd + 1);
+    
+    // Basic cleanup for common AI JSON errors
+    rawJson = rawJson.replace(/,(\s*[}\]])/g, '$1'); // Remove trailing commas
+    
+    try {
+      const parsed = JSON.parse(rawJson);
+      
+      // Validate against our schema
+      const validated = HighLevelPlanSchema.parse(parsed);
+      
+      return validated;
+    } catch (parseError) {
+      console.error('❌ [generateHighLevelPlan] JSON parsing or validation failed:', parseError);
+      console.error('Raw response:', text);
+      throw new Error(`Failed to parse or validate high-level plan: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ [generateHighLevelPlan] Failed to generate high-level plan:', error);
+    
+    // Check for quota errors
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('insufficient_quota')) {
+      console.log('⚠️ [generateHighLevelPlan] Quota exceeded, providing fallback plan');
+      
+      // Fallback plan following 3:1 pattern
+      return {
+        programName: "12-Week Hypertrophy Transformation (Fallback)",
+        weeks: [
+          { week_number: 1, focus: "Hypertrophy Accumulation 1", notes: "Building the foundation with moderate volume and intensity." },
+          { week_number: 2, focus: "Hypertrophy Accumulation 2", notes: "Increasing training stress while maintaining form focus." },
+          { week_number: 3, focus: "Hypertrophy Accumulation 3", notes: "Peak accumulation week - push your limits safely." },
+          { week_number: 4, focus: "Deload & Recovery", notes: "Active recovery to optimize adaptation and prevent burnout." },
+          { week_number: 5, focus: "Strength-Hypertrophy Blend 1", notes: "Introducing heavier loads while maintaining muscle-building focus." },
+          { week_number: 6, focus: "Strength-Hypertrophy Blend 2", notes: "Balancing strength gains with continued hypertrophy stimulus." },
+          { week_number: 7, focus: "Strength-Hypertrophy Blend 3", notes: "Maximizing the strength-size adaptation window." },
+          { week_number: 8, focus: "Active Recovery", notes: "Strategic deload to prepare for final phase intensification." },
+          { week_number: 9, focus: "Peak Volume 1", notes: "Highest training volumes - your body is adapted and ready." },
+          { week_number: 10, focus: "Peak Volume 2", notes: "Maintaining peak stimulus while monitoring recovery carefully." },
+          { week_number: 11, focus: "Peak Volume 3", notes: "Final push - everything you've built leads to this week." },
+          { week_number: 12, focus: "Transition & Assessment", notes: "Celebrating progress and setting up for your next training phase." }
+        ]
+      };
+    }
+    
+    throw new Error(`High-level plan generation failed: ${errorMessage}. Please try again.`);
+  }
+}
+
+export async function generateDetailedWeek(
+  input: OnboardingInput, 
+  highLevelWeek: HighLevelPlan['weeks'][0],
+  modelName: string = 'gpt-4o'
+): Promise<Week> {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OpenAI API key is required for detailed week generation. Please configure OPENAI_API_KEY environment variable.');
+  }
+
+  try {
+    const client = getLLMClient(modelName);
+
+    // Create the Week schema dynamically from the existing JSON schema
+    const weekSchema = {
+      type: "object",
+      required: ["week_number", "days"],
+      properties: {
+        week_number: { 
+          type: "integer", 
+          minimum: 1, 
+          maximum: 12,
+          description: "The week number (1-12)"
+        },
+        days: {
+          type: "array",
+          minItems: input.training_frequency_preference,
+          maxItems: input.training_frequency_preference,
+          description: `Array of ${input.training_frequency_preference} training days`,
+          items: {
+            type: "object",
+            required: ["day_number", "focus", "exercises"],
+            properties: {
+              day_number: { 
+                type: "integer", 
+                minimum: 1,
+                description: "Day number within the week (1-7)"
+              },
+              focus: { 
+                type: "string",
+                description: "The focus of this training day (e.g., 'Upper Body', 'Push', 'Legs')"
+              },
+              exercises: {
+                type: "array",
+                description: "Array of exercises for this day",
+                items: {
+                  type: "object",
+                  required: ["id", "name", "sets", "reps", "rpe", "tempo", "rest_seconds"],
+                  properties: {
+                    id: { 
+                      type: "string",
+                      description: "Unique exercise identifier"
+                    },
+                    name: { 
+                      type: "string",
+                      description: "Exercise name (e.g., 'Barbell Bench Press')"
+                    },
+                    sets: { 
+                      type: "integer", 
+                      minimum: 1, 
+                      maximum: 8,
+                      description: "Number of sets"
+                    },
+                    reps: { 
+                      type: "string",
+                      description: "Rep range (e.g., '8-12' or '10')"
+                    },
+                    rpe: { 
+                      type: "number", 
+                      minimum: 5, 
+                      maximum: 10,
+                      description: "Rate of Perceived Exertion (5-10 scale)"
+                    },
+                    tempo: { 
+                      type: "string",
+                      description: "Tempo notation (e.g., '2-1-2-1' or empty string)"
+                    },
+                    rest_seconds: { 
+                      type: "integer", 
+                      minimum: 30, 
+                      maximum: 300,
+                      description: "Rest time in seconds"
+                    },
+                    intensity_pct: { 
+                      type: "number", 
+                      minimum: 0.4, 
+                      maximum: 0.9,
+                      description: "Optional intensity percentage"
+                    }
+                  }
+                }
+              },
+              notes: { 
+                type: "string",
+                description: "Optional notes for this training day"
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const userProfile = buildUserProfile(input);
+    
+    const weekPrompt = `You are an expert strength coach creating detailed workout programming. Generate a complete week of training that aligns with the provided high-level plan.
+
+CRITICAL REQUIREMENTS:
+- Follow the exact focus and notes from the high-level plan
+- Create ${input.training_frequency_preference} training days
+- Ensure proper exercise progression and selection
+- Respect user's equipment, injuries, and preferences
+- Follow evidence-based programming principles
+- Use appropriate rep ranges: main lifts 6-12 reps, accessories 8-20 reps
+- Set RPE appropriately for the week's focus
+- All exercises use 180 seconds rest (3 minutes)
+
+Week Focus: "${highLevelWeek.focus}"
+Week Notes: "${highLevelWeek.notes}"
+Week Number: ${highLevelWeek.week_number}
+
+User Profile: ${userProfile}
+
+EXERCISE SELECTION GUIDELINES:
+- Prioritize compound movements first
+- Include appropriate accessories based on focus
+- Respect available equipment: ${(input.equipment_available ?? []).join(', ') || 'Full gym'}
+- Avoid exercises that conflict with injuries: ${(input.injuries ?? []).join(', ') || 'None'}
+- Session length: ${input.session_length_min} minutes (affects exercise count)
+
+PROGRESSION NOTES:
+- Week ${highLevelWeek.week_number} of 12-week program
+- Consider 3:1 accumulation-to-deload pattern
+- Adjust volume/intensity based on week focus
+- Deload weeks should reduce sets by ~40%
+
+Generate a complete week following the exact schema provided.`;
+
+    const response = await client.chat.completions.create({
+      model: modelName,
+      temperature: 0.2,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a professional strength coach. Use the generate_week_plan tool to create a detailed training week that follows evidence-based programming principles.'
+        },
+        {
+          role: 'user',
+          content: weekPrompt
+        }
+      ],
+      tools: [
+        {
+          type: 'function',
+          function: {
+            name: 'generate_week_plan',
+            description: 'Generate a detailed training week with specific exercises, sets, reps, and programming',
+            parameters: weekSchema
+          }
+        }
+      ],
+      tool_choice: 'required'
+    });
+
+    // Extract the tool call result
+    const toolCall = response.choices[0]?.message?.tool_calls?.[0];
+    if (!toolCall || toolCall.type !== 'function' || toolCall.function.name !== 'generate_week_plan') {
+      throw new Error('No valid tool call found in response');
+    }
+
+    const weekData = JSON.parse(toolCall.function.arguments);
+    
+    // Validate the returned data structure
+    if (!weekData || typeof weekData !== 'object') {
+      throw new Error('Invalid week data structure returned');
+    }
+
+    // Ensure week_number matches the high-level plan
+    weekData.week_number = highLevelWeek.week_number;
+
+    // Apply session constraints and equipment substitutions
+    let validatedWeek: Week = weekData as Week;
+    
+    // Create a temporary program to use existing validation functions
+    const tempProgram: Program = {
+      program_id: 'temp',
+      name: 'temp',
+      paid: false,
+      weeks: [validatedWeek],
+      metadata: { created_at: new Date().toISOString(), source: [], volume_profile: {} }
+    };
+
+    // Apply existing constraints and validations
+    const processedProgram = applySessionConstraints(tempProgram, input);
+    validatedWeek = processedProgram.weeks[0]!;
+
+    return validatedWeek;
+
+  } catch (error) {
+    console.error('❌ [generateDetailedWeek] Failed to generate detailed week:', error);
+    
+    // Check for quota errors and provide fallback
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('insufficient_quota')) {
+      console.log('⚠️ [generateDetailedWeek] Quota exceeded, falling back to deterministic generation');
+      
+      // Use existing deterministic generation as fallback
+      const fallbackWeek = generateDeterministicWeek(input);
+      return {
+        week_number: highLevelWeek.week_number,
+        days: fallbackWeek.days
+      };
+    }
+    
+    throw new Error(`Detailed week generation failed: ${errorMessage}. Please try again.`);
+  }
 }
 
 
