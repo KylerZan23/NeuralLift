@@ -5,7 +5,7 @@ import OpenAI from 'openai';
 export interface LLMClient {
   chat: {
     completions: {
-      create(params: any): Promise<any>;
+      create(params: OpenAI.Chat.ChatCompletionCreateParams): Promise<OpenAI.Chat.ChatCompletion>;
     };
   };
 }

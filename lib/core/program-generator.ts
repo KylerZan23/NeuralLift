@@ -1,7 +1,4 @@
 import { z } from 'zod';
-import Ajv, { type ErrorObject, type Schema } from 'ajv';
-import addFormats from 'ajv-formats';
-import programSchema from '@/types/program.schema.json';
 import type { Program, Day, Week } from '@/types/program';
 import OpenAI from 'openai';
 import { LIFTING_PRINCIPLES } from './knowledge-base';
@@ -40,16 +37,6 @@ export const OnboardingInput = z.object({
 export type OnboardingInput = z.infer<typeof OnboardingInput>;
 
 type Exercise = Day['exercises'][0];
-
-const ajv = new Ajv({ allErrors: true, strict: false });
-addFormats(ajv);
-const validateProgram = ajv.compile(programSchema as Schema);
-
-function coerceProgramId(p: Program, programId: string): Program {
-  if (!p || typeof p !== 'object') return p;
-  p.program_id = programId;
-  return p;
-}
 
 function ensureMetadata(p: Program): Program {
   const created = new Date().toISOString();
