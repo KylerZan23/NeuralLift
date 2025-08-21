@@ -29,8 +29,8 @@ class GoogleAIClientWrapper implements LLMClient {
           const model = this.googleAI.getGenerativeModel({ model: params.model });
 
           // Convert OpenAI messages to Gemini format
-          let systemMessages: string[] = [];
-          let conversationMessages = params.messages.filter(msg => {
+          const systemMessages: string[] = [];
+          const conversationMessages = params.messages.filter(msg => {
             if (msg.role === 'system') {
               systemMessages.push(msg.content as string || '');
               return false;
@@ -48,7 +48,7 @@ class GoogleAIClientWrapper implements LLMClient {
               // For array content, extract text parts only
               contentText = msg.content
                 .filter(part => part.type === 'text')
-                .map(part => (part as any).text)
+                .map(part => (part as OpenAI.Chat.Completions.ChatCompletionContentPartText).text)
                 .join(' ');
             }
 
