@@ -15,7 +15,7 @@ describe('AI Program Generation', () => {
       goals: ['hypertrophy']
     });
     const p = await generateProgramWithLLM(cfg, { programId: 'test' });
-    expect(p.weeks[0].days.length).toBe(4);
+    expect(p.weeks[0]?.days.length).toBe(4);
     expect(p.program_id).toBe('test');
     expect(p.weeks.length).toBe(12);
   });
@@ -31,7 +31,7 @@ describe('AI Program Generation', () => {
       goals: ['hypertrophy']
     });
     const p = await generateProgramWithLLM(cfg, { programId: 'test' });
-    expect(p.weeks[0].days.length).toBe(5);
+    expect(p.weeks[0]?.days.length).toBe(5);
     expect(p.program_id).toBe('test');
     expect(p.weeks.length).toBe(12);
   });

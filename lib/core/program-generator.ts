@@ -664,7 +664,7 @@ export async function generateProgramWithLLM(
     
     // Model configuration for cost and performance optimization
     const PLANNER_MODEL = 'gpt-4o'; // High-quality planning model
-    const WORKER_MODEL = 'gpt-4o';  // Fast, efficient worker model
+    const WORKER_MODEL = 'gemini-2.5-flash';  // Fast, efficient worker model
     
     // Phase 1: Generate high-level plan
     console.log('📋 [generateProgramWithLLM] Phase 1: Generating high-level mesocycle plan...');

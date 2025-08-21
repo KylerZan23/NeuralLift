@@ -8,7 +8,8 @@ const EnvSchema = z.object({
   STRIPE_SECRET: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
   STRIPE_PRICE_PROGRAM_UNLOCK: z.string().min(1),
-  OPENAI_API_KEY: z.string().optional()
+  OPENAI_API_KEY: z.string().optional(),
+  GOOGLE_API_KEY: z.string().optional()
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;
@@ -25,7 +26,8 @@ export function getEnv(): AppEnv {
     STRIPE_SECRET: process.env.STRIPE_SECRET,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     STRIPE_PRICE_PROGRAM_UNLOCK: process.env.STRIPE_PRICE_PROGRAM_UNLOCK,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY
   });
   if (!parsed.success) {
     const errors = parsed.error.flatten().fieldErrors;

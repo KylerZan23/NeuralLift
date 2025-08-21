@@ -33,6 +33,7 @@ Science-based lifting tailored to you. Generate and unlock a 12-week hypertrophy
 
 **AI Configuration:**
 - `OPENAI_API_KEY` - OpenAI API key (server-only, keep secret!)
+- `GOOGLE_API_KEY` - Google AI API key for Gemini models (server-only, keep secret!)
 
 **Optional - Redis (for rate limiting):**
 - `UPSTASH_REDIS_REST_URL` - Redis REST API URL
