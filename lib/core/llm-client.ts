@@ -1,6 +1,6 @@
 // /lib/core/llm-client.ts
 import OpenAI from 'openai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, Tool, FunctionDeclaration, FunctionDeclarationSchema } from '@google/generative-ai';
 
 // A simplified interface matching the parts of the OpenAI client we use
 export interface LLMClient {
@@ -15,18 +15,41 @@ const openAIClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Google AI client wrapper that implements the LLMClient interface
 class GoogleAIClientWrapper implements LLMClient {
-  private googleAI: GoogleGenerativeAI;
+  private client: GoogleGenerativeAI;
 
   constructor(apiKey: string) {
-    this.googleAI = new GoogleGenerativeAI(apiKey);
+    this.client = new GoogleGenerativeAI(apiKey);
   }
 
   chat = {
     completions: {
       create: async (params: OpenAI.Chat.ChatCompletionCreateParams): Promise<OpenAI.Chat.ChatCompletion> => {
         try {
-          // Get the generative model
-          const model = this.googleAI.getGenerativeModel({ model: params.model });
+          // 1. Get the tool definitions from the parameters and convert to Gemini format
+          const modelConfig: { model: string; tools?: Tool[] } = { model: params.model };
+          
+          if (params.tools && params.tools.length > 0) {
+            const functionDeclarations: FunctionDeclaration[] = params.tools
+              .filter(t => t.type === 'function')
+              .map(t => {
+                const decl: FunctionDeclaration = {
+                  name: t.function.name,
+                  description: t.function.description ?? ''
+                };
+                if (t.function.parameters) {
+                  // Cast OpenAI parameters to Google AI format - they are compatible in practice
+                  decl.parameters = t.function.parameters as unknown as FunctionDeclarationSchema;
+                }
+                return decl;
+              });
+            
+            if (functionDeclarations.length > 0) {
+              modelConfig.tools = [{ functionDeclarations }];
+            }
+          }
+
+          // 2. Pass the tools in the format Gemini expects
+          const model = this.client.getGenerativeModel(modelConfig);
 
           // Convert OpenAI messages to Gemini format
           const systemMessages: string[] = [];
@@ -82,7 +105,46 @@ class GoogleAIClientWrapper implements LLMClient {
             }
           });
 
-          const response = await result.response;
+          const response = result.response;
+
+          // 3. Check for Gemini's function call response and map it correctly
+          const functionCalls = response.functionCalls();
+          if (functionCalls && functionCalls.length > 0) {
+            const toolCalls = functionCalls.map((fc, index) => ({
+              id: `call_${index}`, // Generate a unique ID for the call
+              type: 'function' as const,
+              function: {
+                name: fc.name,
+                arguments: JSON.stringify(fc.args), // Ensure arguments are a string
+              },
+            }));
+
+            // 4. Return the response in the OpenAI-compatible format
+            return {
+              id: `gemini-${Date.now()}`,
+              object: 'chat.completion',
+              created: Math.floor(Date.now() / 1000),
+              model: params.model,
+              choices: [{
+                index: 0,
+                message: {
+                  role: 'assistant',
+                  content: null,
+                  tool_calls: toolCalls,
+                  refusal: null
+                },
+                finish_reason: 'tool_calls',
+                logprobs: null
+              }],
+              usage: {
+                prompt_tokens: response.usageMetadata?.promptTokenCount ?? 0,
+                completion_tokens: response.usageMetadata?.candidatesTokenCount ?? 0,
+                total_tokens: response.usageMetadata?.totalTokenCount ?? 0
+              }
+            };
+          }
+
+          // Regular text response (no tool calls)
           const text = response.text();
 
           // Convert Gemini response back to OpenAI format
