@@ -121,9 +121,39 @@ class GoogleAIClientWrapper implements LLMClient {
           console.log('🔍 [GoogleAIClientWrapper] Gemini response candidates:', JSON.stringify(response.candidates, null, 2));
           console.log('🔍 [GoogleAIClientWrapper] Checking for function calls...');
 
+          // Check for malformed function call error
+          const finishReason = response.candidates?.[0]?.finishReason;
+          if (finishReason === 'MALFORMED_FUNCTION_CALL') {
+            console.error('🚨 [GoogleAIClientWrapper] Gemini returned MALFORMED_FUNCTION_CALL');
+            console.error('🔍 [GoogleAIClientWrapper] Full response for debugging:', JSON.stringify(response.candidates?.[0], null, 2));
+            throw new Error('Gemini returned malformed function call. This may be due to complex schema or prompt formatting issues.');
+          }
+
+          // Check for other problematic finish reasons
+          if (finishReason === 'SAFETY' || finishReason === 'RECITATION') {
+            console.error(`🚨 [GoogleAIClientWrapper] Gemini blocked generation due to: ${finishReason}`);
+            throw new Error(`Gemini blocked the response due to ${finishReason} concerns. Please modify your request.`);
+          }
+
           // 3. Check for Gemini's function call response and map it correctly
           const functionCalls = response.functionCalls();
           console.log('🔍 [GoogleAIClientWrapper] Function calls found:', functionCalls?.length || 0);
+          
+          // If tools were requested but no function calls found, this is an error
+          if (params.tools && params.tools.length > 0 && (!functionCalls || functionCalls.length === 0)) {
+            console.error('🚨 [GoogleAIClientWrapper] Expected function calls but none found');
+            console.error('🔍 [GoogleAIClientWrapper] Response finish reason:', finishReason);
+            
+            // Try to get text response for debugging
+            try {
+              const debugText = response.text();
+              console.error('🔍 [GoogleAIClientWrapper] Response text:', debugText);
+            } catch (e) {
+              console.error('🔍 [GoogleAIClientWrapper] Could not extract response text for debugging');
+            }
+            
+            throw new Error('No valid tool call found in response');
+          }
           
           if (functionCalls && functionCalls.length > 0) {
             const toolCalls = functionCalls.map((fc, index) => ({

@@ -674,7 +674,7 @@ export async function generateProgramWithLLM(
     // Phase 2: Generate detailed weeks in parallel
     console.log('⚙️ [generateProgramWithLLM] Phase 2: Generating detailed weeks in parallel...');
     const weekPromises = highLevelPlan.weeks.map(highLevelWeek => 
-      generateDetailedWeek(input, highLevelWeek, WORKER_MODEL)
+      generateDetailedWeek(input, highLevelWeek, WORKER_MODEL, 3) // 3 retries for robustness
     );
     
     const detailedWeeks = await Promise.all(weekPromises);
@@ -880,16 +880,20 @@ User Profile: ${userProfile}`;
 export async function generateDetailedWeek(
   input: OnboardingInput, 
   highLevelWeek: HighLevelPlan['weeks'][0],
-  modelName: string = 'gpt-4o'
+  modelName: string = 'gpt-4o',
+  maxRetries: number = 3
 ): Promise<Week> {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error('OpenAI API key is required for detailed week generation. Please configure OPENAI_API_KEY environment variable.');
   }
 
-  try {
-    const client = getLLMClient(modelName);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 [generateDetailedWeek] Attempt ${attempt}/${maxRetries} for week ${highLevelWeek.week_number}`);
+      
+      const client = getLLMClient(modelName);
 
-    // Create the Week schema dynamically from the existing JSON schema
+      // Create the Week schema dynamically from the existing JSON schema
     const weekSchema = {
       type: "object",
       required: ["week_number", "days"],
@@ -1071,26 +1075,46 @@ Generate a complete week following the exact schema provided.`;
     const processedProgram = applySessionConstraints(tempProgram, input);
     validatedWeek = processedProgram.weeks[0]!;
 
-    return validatedWeek;
+      return validatedWeek;
 
-  } catch (error) {
-    console.error('❌ [generateDetailedWeek] Failed to generate detailed week:', error);
-    
-    // Check for quota errors and provide fallback
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('insufficient_quota')) {
-      console.log('⚠️ [generateDetailedWeek] Quota exceeded, falling back to deterministic generation');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`❌ [generateDetailedWeek] Attempt ${attempt}/${maxRetries} failed:`, errorMessage);
       
-      // Use existing deterministic generation as fallback
-      const fallbackWeek = generateDeterministicWeek(input);
-      return {
-        week_number: highLevelWeek.week_number,
-        days: fallbackWeek.days
-      };
+      // Check for quota errors and provide fallback immediately
+      if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('insufficient_quota')) {
+        console.log('⚠️ [generateDetailedWeek] Quota exceeded, falling back to deterministic generation');
+        
+        const fallbackWeek = generateDeterministicWeek(input);
+        return {
+          week_number: highLevelWeek.week_number,
+          days: fallbackWeek.days
+        };
+      }
+      
+      // Check if this is a retryable error (malformed function call, temporary failures)
+      const isRetryableError = errorMessage.includes('malformed function call') || 
+                              errorMessage.includes('No valid tool call found') ||
+                              errorMessage.includes('Invalid week data structure') ||
+                              errorMessage.includes('network') ||
+                              errorMessage.includes('timeout');
+      
+      if (isRetryableError && attempt < maxRetries) {
+        const delay = Math.pow(2, attempt - 1) * 1000; // Exponential backoff: 1s, 2s, 4s
+        console.log(`⏳ [generateDetailedWeek] Retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue; // Try again
+      }
+      
+      // If this is the last attempt or non-retryable error, throw
+      if (attempt === maxRetries) {
+        throw new Error(`Detailed week generation failed after ${maxRetries} attempts: ${errorMessage}. Please try again.`);
+      }
     }
-    
-    throw new Error(`Detailed week generation failed: ${errorMessage}. Please try again.`);
   }
+  
+  // This should never be reached, but just in case
+  throw new Error('Unexpected error in generateDetailedWeek - reached end of retry loop');
 }
 
 
