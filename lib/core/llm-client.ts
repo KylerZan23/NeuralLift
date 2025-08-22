@@ -25,6 +25,14 @@ class GoogleAIClientWrapper implements LLMClient {
     completions: {
       create: async (params: OpenAI.Chat.ChatCompletionCreateParams): Promise<OpenAI.Chat.ChatCompletion> => {
         try {
+          console.log('🚀 [GoogleAIClientWrapper] Received parameters:', JSON.stringify({
+            model: params.model,
+            hasTools: !!params.tools && params.tools.length > 0,
+            toolsCount: params.tools?.length || 0,
+            toolChoice: (params as OpenAI.Chat.ChatCompletionCreateParams & { tool_choice?: string }).tool_choice,
+            messages: params.messages.map(m => ({ role: m.role, contentLength: typeof m.content === 'string' ? m.content.length : 'array' }))
+          }, null, 2));
+
           // 1. Get the tool definitions from the parameters and convert to Gemini format
           const modelConfig: { model: string; tools?: Tool[] } = { model: params.model };
           
@@ -45,10 +53,12 @@ class GoogleAIClientWrapper implements LLMClient {
             
             if (functionDeclarations.length > 0) {
               modelConfig.tools = [{ functionDeclarations }];
+              console.log('🔧 [GoogleAIClientWrapper] Tool config:', JSON.stringify(modelConfig.tools, null, 2));
             }
           }
 
           // 2. Pass the tools in the format Gemini expects
+          console.log('🔧 [GoogleAIClientWrapper] Model config:', JSON.stringify(modelConfig, null, 2));
           const model = this.client.getGenerativeModel(modelConfig);
 
           // Convert OpenAI messages to Gemini format
@@ -107,8 +117,14 @@ class GoogleAIClientWrapper implements LLMClient {
 
           const response = result.response;
 
+          // Debug logging to understand Gemini's response structure
+          console.log('🔍 [GoogleAIClientWrapper] Gemini response candidates:', JSON.stringify(response.candidates, null, 2));
+          console.log('🔍 [GoogleAIClientWrapper] Checking for function calls...');
+
           // 3. Check for Gemini's function call response and map it correctly
           const functionCalls = response.functionCalls();
+          console.log('🔍 [GoogleAIClientWrapper] Function calls found:', functionCalls?.length || 0);
+          
           if (functionCalls && functionCalls.length > 0) {
             const toolCalls = functionCalls.map((fc, index) => ({
               id: `call_${index}`, // Generate a unique ID for the call
