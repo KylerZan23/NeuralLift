@@ -149,7 +149,7 @@ class GoogleAIClientWrapper implements LLMClient {
               const debugText = response.text();
               console.error('🔍 [GoogleAIClientWrapper] Response text:', debugText);
             } catch (e) {
-              console.error('🔍 [GoogleAIClientWrapper] Could not extract response text for debugging');
+              console.error('🔍 [GoogleAIClientWrapper] Could not extract response text for debugging:', e);
             }
             
             throw new Error('No valid tool call found in response');
