@@ -123,16 +123,18 @@ class GoogleAIClientWrapper implements LLMClient {
 
           // Check for malformed function call error
           const finishReason = response.candidates?.[0]?.finishReason;
-          if (finishReason === 'MALFORMED_FUNCTION_CALL') {
+          const finishReasonStr = String(finishReason); // Cast to string to handle API values not in TS types
+          
+          if (finishReasonStr === 'MALFORMED_FUNCTION_CALL') {
             console.error('🚨 [GoogleAIClientWrapper] Gemini returned MALFORMED_FUNCTION_CALL');
             console.error('🔍 [GoogleAIClientWrapper] Full response for debugging:', JSON.stringify(response.candidates?.[0], null, 2));
             throw new Error('Gemini returned malformed function call. This may be due to complex schema or prompt formatting issues.');
           }
 
           // Check for other problematic finish reasons
-          if (finishReason === 'SAFETY' || finishReason === 'RECITATION') {
-            console.error(`🚨 [GoogleAIClientWrapper] Gemini blocked generation due to: ${finishReason}`);
-            throw new Error(`Gemini blocked the response due to ${finishReason} concerns. Please modify your request.`);
+          if (finishReasonStr === 'SAFETY' || finishReasonStr === 'RECITATION') {
+            console.error(`🚨 [GoogleAIClientWrapper] Gemini blocked generation due to: ${finishReasonStr}`);
+            throw new Error(`Gemini blocked the response due to ${finishReasonStr} concerns. Please modify your request.`);
           }
 
           // 3. Check for Gemini's function call response and map it correctly
@@ -142,7 +144,7 @@ class GoogleAIClientWrapper implements LLMClient {
           // If tools were requested but no function calls found, this is an error
           if (params.tools && params.tools.length > 0 && (!functionCalls || functionCalls.length === 0)) {
             console.error('🚨 [GoogleAIClientWrapper] Expected function calls but none found');
-            console.error('🔍 [GoogleAIClientWrapper] Response finish reason:', finishReason);
+            console.error('🔍 [GoogleAIClientWrapper] Response finish reason:', finishReasonStr);
             
             // Try to get text response for debugging
             try {
@@ -206,7 +208,7 @@ class GoogleAIClientWrapper implements LLMClient {
                 content: text,
                 refusal: null
               },
-              finish_reason: response.candidates?.[0]?.finishReason === 'STOP' ? 'stop' : 'stop',
+              finish_reason: String(response.candidates?.[0]?.finishReason) === 'STOP' ? 'stop' : 'stop',
               logprobs: null
             }],
             usage: {
